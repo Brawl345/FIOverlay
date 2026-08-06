@@ -1,0 +1,143 @@
+{
+  "extensionName": {
+    "message": "FIOverlay"
+  },
+  "extensionDescription": {
+    "message": "Replaces file pickers with an overlay that also takes images from the clipboard."
+  },
+  "actionTitleEnabled": {
+    "message": "FIOverlay is active here - click to disable for this domain"
+  },
+  "actionTitleDisabled": {
+    "message": "FIOverlay is off here - click to enable for this domain"
+  },
+  "overlayTitle": {
+    "message": "Choose a file"
+  },
+  "dropTitle": {
+    "message": "Paste, drop or browse"
+  },
+  "dropHint": {
+    "message": "Press $1 to insert an image from the clipboard"
+  },
+  "acceptHint": {
+    "message": "This field accepts: $1"
+  },
+  "actionPaste": {
+    "message": "Paste from clipboard"
+  },
+  "actionBrowse": {
+    "message": "Choose from device…"
+  },
+  "actionCancel": {
+    "message": "Cancel"
+  },
+  "actionFetch": {
+    "message": "Load"
+  },
+  "actionPreview": {
+    "message": "Show large preview"
+  },
+  "urlPlaceholder": {
+    "message": "Paste a file or image URL"
+  },
+  "actionConfirm": {
+    "message": "Use file"
+  },
+  "actionConfirmMany": {
+    "message": "Use $1 files"
+  },
+  "actionRemove": {
+    "message": "Remove"
+  },
+  "errorClipboardEmpty": {
+    "message": "No image or file found in the clipboard."
+  },
+  "errorClipboardBlocked": {
+    "message": "This page blocks clipboard access - use the keyboard shortcut instead."
+  },
+  "errorDownloadFailed": {
+    "message": "The image could not be downloaded."
+  },
+  "errorInvalidUrl": {
+    "message": "Only http, https and data URLs can be loaded."
+  },
+  "errorTooLarge": {
+    "message": "The file is too large (max. 64 MB)."
+  },
+  "errorPreviewFailed": {
+    "message": "This image cannot be previewed."
+  },
+  "errorAcceptMismatch": {
+    "message": "This field only accepts: $1"
+  },
+  "errorSomeRejected": {
+    "message": "$1 file(s) were skipped because the field does not accept them."
+  },
+  "errorAssignFailed": {
+    "message": "The file could not be handed over to the page."
+  },
+  "errorUnexpected": {
+    "message": "Something went wrong."
+  },
+  "optionsTitle": {
+    "message": "FIOverlay"
+  },
+  "optionsIntro": {
+    "message": "On the domains listed here the native file picker stays untouched. Click the toolbar icon on a page to add or remove its domain. To skip the overlay for a single click, hold Alt (Option) while clicking the file field."
+  },
+  "optionsListTitle": {
+    "message": "Disabled domains"
+  },
+  "optionsPlaceholder": {
+    "message": "example.com"
+  },
+  "optionsAdd": {
+    "message": "Add"
+  },
+  "optionsRemove": {
+    "message": "Remove"
+  },
+  "optionsEmpty": {
+    "message": "No domain is disabled."
+  },
+  "optionsInvalidDomain": {
+    "message": "Please enter a valid domain."
+  },
+  "optionsAlreadyListed": {
+    "message": "This domain is already on the list."
+  },
+  "optionsAdded": {
+    "message": "$1 added."
+  },
+  "optionsRemoved": {
+    "message": "$1 removed."
+  },
+  "optionsCleared": {
+    "message": "List cleared."
+  },
+  "optionsBackupTitle": {
+    "message": "Backup"
+  },
+  "optionsBackupHint": {
+    "message": "The list is synced with your browser account. Export writes a JSON file, import merges it into the current list."
+  },
+  "optionsExport": {
+    "message": "Export…"
+  },
+  "optionsImport": {
+    "message": "Import…"
+  },
+  "optionsClear": {
+    "message": "Remove all"
+  },
+  "optionsExported": {
+    "message": "List exported."
+  },
+  "optionsImported": {
+    "message": "$1 new domain(s) imported."
+  },
+  "optionsImportFailed": {
+    "message": "The file could not be read."
+  }
+}

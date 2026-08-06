@@ -1,0 +1,143 @@
+{
+  "extensionName": {
+    "message": "FIOverlay"
+  },
+  "extensionDescription": {
+    "message": "Ersetzt Datei-Dialoge durch ein Overlay, das auch Bilder aus der Zwischenablage annimmt."
+  },
+  "actionTitleEnabled": {
+    "message": "FIOverlay ist hier aktiv - klicke, um es für diese Domain abzuschalten"
+  },
+  "actionTitleDisabled": {
+    "message": "FIOverlay ist hier aus - klicke, um es für diese Domain einzuschalten"
+  },
+  "overlayTitle": {
+    "message": "Datei auswählen"
+  },
+  "dropTitle": {
+    "message": "Einfügen, ablegen oder auswählen"
+  },
+  "dropHint": {
+    "message": "Drücke $1, um ein Bild aus der Zwischenablage einzufügen"
+  },
+  "acceptHint": {
+    "message": "Dieses Feld akzeptiert: $1"
+  },
+  "actionPaste": {
+    "message": "Aus Zwischenablage einfügen"
+  },
+  "actionBrowse": {
+    "message": "Vom Gerät auswählen…"
+  },
+  "actionCancel": {
+    "message": "Abbrechen"
+  },
+  "actionFetch": {
+    "message": "Laden"
+  },
+  "actionPreview": {
+    "message": "Große Vorschau anzeigen"
+  },
+  "urlPlaceholder": {
+    "message": "Datei- oder Bild-URL einfügen"
+  },
+  "actionConfirm": {
+    "message": "Datei übernehmen"
+  },
+  "actionConfirmMany": {
+    "message": "$1 Dateien übernehmen"
+  },
+  "actionRemove": {
+    "message": "Entfernen"
+  },
+  "errorClipboardEmpty": {
+    "message": "In der Zwischenablage ist kein Bild und keine Datei."
+  },
+  "errorClipboardBlocked": {
+    "message": "Diese Seite blockiert den Zugriff auf die Zwischenablage - nutze das Tastenkürzel."
+  },
+  "errorDownloadFailed": {
+    "message": "Das Bild konnte nicht geladen werden."
+  },
+  "errorInvalidUrl": {
+    "message": "Es lassen sich nur http-, https- und data-URLs laden."
+  },
+  "errorTooLarge": {
+    "message": "Die Datei ist zu groß (max. 64 MB)."
+  },
+  "errorPreviewFailed": {
+    "message": "Dieses Bild lässt sich nicht anzeigen."
+  },
+  "errorAcceptMismatch": {
+    "message": "Dieses Feld akzeptiert nur: $1"
+  },
+  "errorSomeRejected": {
+    "message": "$1 Datei(en) wurden übersprungen, weil das Feld sie nicht akzeptiert."
+  },
+  "errorAssignFailed": {
+    "message": "Die Datei konnte nicht an die Seite übergeben werden."
+  },
+  "errorUnexpected": {
+    "message": "Da ist etwas schiefgelaufen."
+  },
+  "optionsTitle": {
+    "message": "FIOverlay"
+  },
+  "optionsIntro": {
+    "message": "Auf den hier gelisteten Domains bleibt der native Datei-Dialog unangetastet. Klicke auf einer Seite auf das Symbol in der Symbolleiste, um ihre Domain hinzuzufügen oder zu entfernen. Für einen einzelnen Klick hältst du Alt (Option) gedrückt, dann übernimmt der Browser."
+  },
+  "optionsListTitle": {
+    "message": "Deaktivierte Domains"
+  },
+  "optionsPlaceholder": {
+    "message": "example.com"
+  },
+  "optionsAdd": {
+    "message": "Hinzufügen"
+  },
+  "optionsRemove": {
+    "message": "Entfernen"
+  },
+  "optionsEmpty": {
+    "message": "Es ist keine Domain deaktiviert."
+  },
+  "optionsInvalidDomain": {
+    "message": "Bitte gib eine gültige Domain ein."
+  },
+  "optionsAlreadyListed": {
+    "message": "Diese Domain steht schon auf der Liste."
+  },
+  "optionsAdded": {
+    "message": "$1 hinzugefügt."
+  },
+  "optionsRemoved": {
+    "message": "$1 entfernt."
+  },
+  "optionsCleared": {
+    "message": "Liste geleert."
+  },
+  "optionsBackupTitle": {
+    "message": "Sicherung"
+  },
+  "optionsBackupHint": {
+    "message": "Die Liste wird über dein Browser-Konto synchronisiert. Der Export schreibt eine JSON-Datei, der Import führt sie mit der aktuellen Liste zusammen."
+  },
+  "optionsExport": {
+    "message": "Exportieren…"
+  },
+  "optionsImport": {
+    "message": "Importieren…"
+  },
+  "optionsClear": {
+    "message": "Alle entfernen"
+  },
+  "optionsExported": {
+    "message": "Liste exportiert."
+  },
+  "optionsImported": {
+    "message": "$1 neue Domain(s) importiert."
+  },
+  "optionsImportFailed": {
+    "message": "Die Datei konnte nicht gelesen werden."
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "fioverlay",
+  "description": "FIOverlay",
+  "version": "1.0.0",
+  "author": "Brawl345",
+  "license": "Unlicense",
+  "repository": {
+    "url": "https://github.com/Brawl345/FIOverlay"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "build-for-amo": "npm run build:firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "postinstall": "wxt prepare",
+    "lint:types": "wxt prepare && vue-tsc --noEmit",
+    "lint:code": "biome lint",
+    "lint:ext": "wxt build -b firefox && web-ext lint --self-hosted -s .output/firefox-mv3",
+    "lint:code-fix": "biome lint --fix",
+    "format": "biome format --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "release": "tsx scripts/release.ts"
+  },
+  "dependencies": {
+    "vue": "3.5.41"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.7",
+    "@types/chrome": "0.2.5",
+    "@vue/test-utils": "2.4.11",
+    "@wxt-dev/module-vue": "1.0.3",
+    "happy-dom": "20.11.1",
+    "tsx": "4.23.9",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10",
+    "vue-tsc": "3.3.9",
+    "web-ext": "10.6.0",
+    "wxt": "0.21.3"
+  }
+}
