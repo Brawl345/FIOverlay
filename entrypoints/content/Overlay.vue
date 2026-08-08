@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef } from 'vue';
+import { computed, nextTick, onMounted, ref, shallowRef } from 'vue';
 import {
   type DownloadProgress,
   downloadUrl,
@@ -7,7 +7,13 @@ import {
   filesFromDataTransfer,
   type PickResult,
 } from '../../lib/clipboard';
-import { formatSize, isDownloadableUrl, matchesAccept } from '../../lib/files';
+import {
+  formatSize,
+  isDownloadableUrl,
+  matchesAccept,
+  sanitizeFileName,
+  splitFileName,
+} from '../../lib/files';
 import { t } from '../../lib/i18n';
 import type { Dimensions } from './canvas';
 import Logo from './Logo.vue';
@@ -17,6 +23,7 @@ import Thumbnail from './Thumbnail.vue';
 interface Item {
   id: number;
   file: File;
+  name: string;
   dimensions: Dimensions | null;
 }
 
@@ -35,6 +42,8 @@ const error = ref('');
 const busy = ref(false);
 const progress = ref<DownloadProgress | null>(null);
 const dragDepth = ref(0);
+const editing = ref<number | null>(null);
+const draft = ref('');
 let nextId = 0;
 
 const accept = computed(() => props.accept.trim());
@@ -81,6 +90,7 @@ function addFiles(files: readonly File[]): void {
   const mapped = accepted.map((file) => ({
     id: nextId++,
     file,
+    name: file.name,
     dimensions: null,
   }));
   items.value = props.multiple ? [...items.value, ...mapped] : mapped.slice(-1);
@@ -155,7 +165,52 @@ function onPicked(event: Event): void {
 }
 
 function remove(id: number): void {
+  if (editing.value === id) editing.value = null;
   items.value = items.value.filter((item) => item.id !== id);
+}
+
+function startRename(item: Item): void {
+  editing.value = item.id;
+  draft.value = item.name;
+  void nextTick(() => {
+    const field = root.value?.querySelector<HTMLInputElement>('.fio-item-field');
+    if (!field) return;
+    field.focus();
+    // Finder behaviour: the extension stays out of the selection.
+    field.setSelectionRange(0, splitFileName(item.name)[0].length);
+  });
+}
+
+function stopRename(): void {
+  editing.value = null;
+}
+
+function commitRename(): void {
+  const id = editing.value;
+  editing.value = null;
+  if (id === null) return;
+  items.value = items.value.map((item) =>
+    item.id === id ? { ...item, name: renameTo(draft.value, item.name) } : item,
+  );
+}
+
+/** An input without an extension keeps the previous one - the page's `accept`
+ * usually rides on it. */
+function renameTo(input: string, previous: string): string {
+  const cleaned = sanitizeFileName(input);
+  if (!cleaned) return previous;
+  return splitFileName(cleaned)[1]
+    ? cleaned
+    : cleaned + splitFileName(previous)[1];
+}
+
+/** The bytes stay untouched; only the name the page receives changes. */
+function fileOf(item: Item): File {
+  if (item.name === item.file.name) return item.file;
+  return new File([item.file], item.name, {
+    type: item.file.type,
+    lastModified: item.file.lastModified,
+  });
 }
 
 function show(item: Item): void {
@@ -164,10 +219,7 @@ function show(item: Item): void {
 
 function confirm(): void {
   if (!canConfirm.value) return;
-  emit(
-    'confirm',
-    items.value.map((item) => item.file),
-  );
+  emit('confirm', items.value.map(fileOf));
 }
 
 // Fed by the capture listeners that were installed at document_start.
@@ -179,9 +231,22 @@ defineExpose({
   },
   /** True when the overlay handled Escape itself. */
   dismiss: (): boolean => {
-    if (!preview.value) return false;
-    preview.value = null;
-    return true;
+    if (preview.value) {
+      preview.value = null;
+      return true;
+    }
+    if (editing.value !== null) {
+      stopRename();
+      return true;
+    }
+    return false;
+  },
+  submit: (): void => {
+    if (preview.value) {
+      preview.value = null;
+      return;
+    }
+    confirm();
   },
 });
 
@@ -307,11 +372,31 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
           >
             <Thumbnail
               :file="item.file"
+              :name="item.name"
               @measured="(dimensions) => measured(item.id, dimensions)"
             />
           </button>
           <span class="fio-item-text">
-            <span class="fio-item-name">{{ item.file.name }}</span>
+            <input
+              v-if="editing === item.id"
+              v-model="draft"
+              type="text"
+              class="fio-field fio-item-field"
+              :aria-label="t('actionRename')"
+              spellcheck="false"
+              autocomplete="off"
+              @keydown.enter.prevent.stop="commitRename"
+              @blur="commitRename"
+            />
+            <button
+              v-else
+              type="button"
+              class="fio-item-name"
+              :title="t('actionRename')"
+              @click="startRename(item)"
+            >
+              {{ item.name }}
+            </button>
             <span class="fio-item-size">
               {{ formatSize(item.file.size) }}
               <template v-if="item.dimensions">
@@ -345,6 +430,7 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
         <button
           type="button"
           class="fio-btn fio-btn-primary"
+          aria-keyshortcuts="Enter"
           :disabled="!canConfirm"
           @click="confirm"
         >
@@ -356,6 +442,7 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
     <Preview
       v-if="preview"
       :file="preview.file"
+      :name="preview.name"
       :dimensions="preview.dimensions"
       @close="preview = null"
     />

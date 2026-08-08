@@ -4,7 +4,11 @@ import { formatSize } from '../../lib/files';
 import { t } from '../../lib/i18n';
 import { type Dimensions, drawContain } from './canvas';
 
-const props = defineProps<{ file: File; dimensions: Dimensions | null }>();
+const props = defineProps<{
+  file: File;
+  name: string;
+  dimensions: Dimensions | null;
+}>();
 const emit = defineEmits<{ close: [] }>();
 
 const canvas = ref<HTMLCanvasElement>();
@@ -40,7 +44,7 @@ onMounted(async () => {
     />
     <p v-if="failed" class="fio-preview-failed">{{ t('errorPreviewFailed') }}</p>
     <p class="fio-preview-meta">
-      {{ props.file.name }} · {{ formatSize(props.file.size) }}
+      {{ props.name }} · {{ formatSize(props.file.size) }}
       <template v-if="size"> · {{ size.width }} × {{ size.height }} px</template>
     </p>
   </div>

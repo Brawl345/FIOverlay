@@ -95,6 +95,13 @@ export function isDownloadableUrl(text: string): boolean {
   return /^(https?|data):/i.test(text.trim());
 }
 
+/** Splits `photo.png` into `['photo', '.png']`; a name without one keeps `''`. */
+export function splitFileName(name: string): [stem: string, extension: string] {
+  const dot = name.lastIndexOf('.');
+  if (dot <= 0 || dot === name.length - 1) return [name, ''];
+  return [name.slice(0, dot), name.slice(dot)];
+}
+
 export function sanitizeFileName(name: string): string {
   return name
     .replace(/[\\/:*?"<>|]/g, '_')

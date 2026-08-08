@@ -50,6 +50,9 @@
   "actionRemove": {
     "message": "Remove"
   },
+  "actionRename": {
+    "message": "Rename file"
+  },
   "errorClipboardEmpty": {
     "message": "No image or file found in the clipboard."
   },

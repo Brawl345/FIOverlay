@@ -39,7 +39,8 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   button forwards a synthetic click that may drop the modifier.
 - The page's own input is never clicked; the overlay carries its own file input inside the shadow
   root, so the native dialog feeds the queue instead of ending the overlay.
-- The picked file reaches the page unmodified. Canvas work is display only; `createImageBitmap` is
+- The picked file's bytes reach the page unmodified; a rename only re-wraps the same blob in a
+  fresh `File` when the selection is confirmed. Canvas work is display only; `createImageBitmap` is
   never given both `resizeWidth` and `resizeHeight` unless they already match the natural aspect
   ratio, because it does not preserve it on its own.
 - Pasting takes files and image flavours only; text is ignored without an error. The URL field is

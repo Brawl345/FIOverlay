@@ -11,6 +11,8 @@ Works in Chrome and Firefox. Completely AI-generated. I don't take feature reque
 - Add a file from a URL.
 - Choose files from your device.
 - Check image previews, file sizes, and dimensions before uploading.
+- Rename a file by clicking its name in the list.
+- Confirm the selection with <kbd>Enter</kbd>, close the overlay with <kbd>Esc</kbd>.
 - Use <kbd>Alt</kbd>/<kbd>Option</kbd>+click when you want to open the browser's normal file picker.
 - Turn FIOverlay off for individual websites from the toolbar icon. Your disabled-site list syncs between browsers and can be exported from the settings page.
 

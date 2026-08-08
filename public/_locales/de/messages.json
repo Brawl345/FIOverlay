@@ -50,6 +50,9 @@
   "actionRemove": {
     "message": "Entfernen"
   },
+  "actionRename": {
+    "message": "Datei umbenennen"
+  },
   "errorClipboardEmpty": {
     "message": "In der Zwischenablage ist kein Bild und keine Datei."
   },

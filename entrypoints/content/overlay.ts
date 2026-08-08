@@ -8,6 +8,7 @@ interface OverlayInstance {
   pasteFrom: (transfer: DataTransfer | null) => void;
   fail: (messageKey: string) => void;
   dismiss: () => boolean;
+  submit: () => void;
 }
 
 /**
@@ -59,6 +60,16 @@ function isTextFieldFocused(shadow: ShadowRoot): boolean {
   return (
     active.tagName === 'INPUT' && (active as HTMLInputElement).type !== 'file'
   );
+}
+
+/**
+ * Enter already carries a meaning on these: the URL field submits its form, a
+ * focused control activates itself - confirming on top of that would fire twice.
+ */
+function ownsEnter(shadow: ShadowRoot): boolean {
+  if (isTextFieldFocused(shadow)) return true;
+  const active = shadow.activeElement;
+  return active?.tagName === 'BUTTON' || active?.tagName === 'A';
 }
 
 let sheet: CSSStyleSheet | null = null;
@@ -157,11 +168,20 @@ export function openOverlay(
         instance?.pasteFrom(clipboard);
       },
       keydown: (event) => {
-        if ((event as KeyboardEvent).key !== 'Escape') return;
+        const key = event as KeyboardEvent;
+        if (key.key === 'Escape') {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          // The large preview eats the first Escape, the overlay the next one.
+          if (!instance?.dismiss()) close();
+          return;
+        }
+        if (key.key !== 'Enter') return;
+        if (key.isComposing || key.altKey || key.ctrlKey || key.metaKey) return;
+        if (ownsEnter(shadow)) return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        // The large preview eats the first Escape, the overlay the next one.
-        if (!instance?.dismiss()) close();
+        instance?.submit();
       },
     });
 

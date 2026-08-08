@@ -8,7 +8,18 @@ import {
   isDownloadableUrl,
   matchesAccept,
   sanitizeFileName,
+  splitFileName,
 } from '../lib/files';
+
+describe('splitFileName', () => {
+  it('separates the extension only when there is one', () => {
+    expect(splitFileName('shot.png')).toEqual(['shot', '.png']);
+    expect(splitFileName('archive.tar.gz')).toEqual(['archive.tar', '.gz']);
+    expect(splitFileName('readme')).toEqual(['readme', '']);
+    expect(splitFileName('.gitignore')).toEqual(['.gitignore', '']);
+    expect(splitFileName('trailing.')).toEqual(['trailing.', '']);
+  });
+});
 
 describe('matchesAccept', () => {
   const png = { name: 'shot.PNG', type: 'image/png' };

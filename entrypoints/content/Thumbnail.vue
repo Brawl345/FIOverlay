@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { type Dimensions, drawCover } from './canvas';
 
-const props = defineProps<{ file: File }>();
+const props = defineProps<{ file: File; name: string }>();
 const emit = defineEmits<{ measured: [dimensions: Dimensions] }>();
 
 const canvas = ref<HTMLCanvasElement>();
@@ -20,7 +20,9 @@ onMounted(async () => {
   emit('measured', dimensions);
 });
 
-const label = props.file.name.split('.').pop()?.slice(0, 4).toUpperCase() ?? '?';
+const label = computed(
+  () => props.name.split('.').pop()?.slice(0, 4).toUpperCase() ?? '?',
+);
 </script>
 
 <template>
