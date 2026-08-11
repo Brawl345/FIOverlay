@@ -14,11 +14,14 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
 
 - **`lib/`**: `domains.ts` (synced disabled-domain list, hostname matching, import/export),
   `clipboard.ts` (DataTransfer and Clipboard API → `File[]`, port-based downloads), `files.ts`
-  (`accept` matching, data URLs, names, sizes), `base64.ts`, `messages.ts`, `i18n.ts`.
+  (`accept` matching, data URLs, names, sizes), `picker-hook.ts` (page-world `click()`/`showPicker()`
+  patch), `base64.ts`, `messages.ts`, `i18n.ts`.
 - **`entrypoints/content/`**: `index.ts` (capture-phase click interception at `document_start`),
   `early-events.ts` (paste/keydown capture registered before page scripts), `overlay.ts`
   (`<dialog>` + closed shadow root, Vue mount, `assignFiles`), `canvas.ts` (bitmap decode/draw),
   `Overlay.vue`, `Thumbnail.vue`, `Preview.vue`, `Logo.vue`, `overlay.css`.
+- **`entrypoints/picker.content.ts`**: `world: 'MAIN'` script installing `picker-hook.ts`, which
+  announces a picker the isolated world would not see otherwise.
 - **`entrypoints/background.ts`**: per-tab icon state, domain toggle on `action.onClicked`, chunked
   streaming downloads over a `runtime.Port`.
 - **`entrypoints/options/`**: domain list, JSON export/import.
@@ -34,6 +37,9 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   `createImageBitmap` for previews, background `fetch` for downloads. The `<img>` + object URL path
   in `canvas.ts` is the one exception, reserved for what that decoder rejects (SVG); it may be
   refused by `img-src` and then falls back to a placeholder.
+- A detached input's events reach nothing outside itself, so the page-world hook parks it in the
+  document only for the duration of the announcement and puts it back at its old position; the page
+  keeps the element it created, and both worlds work on that same element.
 - `overlayOpen` suppresses re-entrant `input.click()` calls from page handlers, and an Alt+click
   releases exactly one click to the browser - the time window only exists because a label or upload
   button forwards a synthetic click that may drop the modifier.

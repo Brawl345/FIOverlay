@@ -10,6 +10,9 @@ export interface InitResponse {
 
 export const DOWNLOAD_PORT = 'download';
 
+/** Cancelable announcement the page world sends before a picker opens. */
+export const PICKER_EVENT = 'fioverlay:picker';
+
 export interface DownloadRequest {
   url: string;
 }

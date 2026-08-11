@@ -1,7 +1,7 @@
 import { browser } from 'wxt/browser';
 import { defineContentScript } from '#imports';
 import { DISABLED_DOMAINS_KEY } from '../../lib/domains';
-import type { InitResponse } from '../../lib/messages';
+import { type InitResponse, PICKER_EVENT } from '../../lib/messages';
 import { installEarlyEvents } from './early-events';
 import { openOverlay } from './overlay';
 
@@ -54,14 +54,7 @@ export default defineContentScript({
     };
     browser.storage.onChanged.addListener(onStorageChanged);
 
-    const onClick = (event: MouseEvent): void => {
-      // A label or a page's upload button forwards a synthetic click to the
-      // input that may not carry the modifier, so the last one wins.
-      if (event.altKey) altAt = event.timeStamp;
-
-      const target = event.composedPath()[0] ?? event.target;
-      if (!isFileInput(target)) return;
-
+    const intercept = (event: Event, input: HTMLInputElement): void => {
       // A page handler re-clicking the input while the overlay is up must not
       // slip a second picker past us.
       if (overlayOpen) {
@@ -71,7 +64,7 @@ export default defineContentScript({
 
       // Escape hatch: Alt/Option+click hands this one click to the browser, and
       // exactly one - the window only exists to cover a forwarded click.
-      if (event.altKey || event.timeStamp - altAt < ALT_WINDOW_MS) {
+      if (event.timeStamp - altAt < ALT_WINDOW_MS) {
         altAt = Number.NEGATIVE_INFINITY;
         return;
       }
@@ -80,16 +73,36 @@ export default defineContentScript({
 
       event.preventDefault();
       overlayOpen = true;
-      void openOverlay(ctx, target).finally(() => {
+      void openOverlay(ctx, input).finally(() => {
         overlayOpen = false;
       });
     };
 
+    const onClick = (event: MouseEvent): void => {
+      // A label or a page's upload button forwards a synthetic click to the
+      // input that may not carry the modifier, so the last one wins.
+      if (event.altKey) altAt = event.timeStamp;
+
+      const target = event.composedPath()[0] ?? event.target;
+      if (isFileInput(target)) intercept(event, target);
+    };
+
+    /**
+     * A picker the page opens on a detached input or through `showPicker()`
+     * never produces a click here, so the page world announces it instead.
+     */
+    const onPickerRequest = (event: Event): void => {
+      const target = event.composedPath()[0] ?? event.target;
+      if (isFileInput(target)) intercept(event, target);
+    };
+
     window.addEventListener('click', onClick, true);
+    window.addEventListener(PICKER_EVENT, onPickerRequest, true);
     const removeEarlyEvents = installEarlyEvents(['paste', 'keydown']);
 
     ctx.onInvalidated(() => {
       window.removeEventListener('click', onClick, true);
+      window.removeEventListener(PICKER_EVENT, onPickerRequest, true);
       removeEarlyEvents();
       browser.storage.onChanged.removeListener(onStorageChanged);
     });
