@@ -3,9 +3,9 @@
     "fioverlay@brawl345.github.com": {
       "updates": [
         {
-          "version": "1.1.1",
-          "update_link": "https://github.com/Brawl345/FIOverlay/releases/download/1.1.1/fioverlay-1.1.1.xpi",
-          "update_info_url": "https://raw.githubusercontent.com/Brawl345/FIOverlay/refs/tags/1.1.1/CHANGES.md"
+          "version": "2.0.0",
+          "update_link": "https://github.com/Brawl345/FIOverlay/releases/download/2.0.0/fioverlay-2.0.0.xpi",
+          "update_info_url": "https://raw.githubusercontent.com/Brawl345/FIOverlay/refs/tags/2.0.0/CHANGES.md"
         }
       ]
     }

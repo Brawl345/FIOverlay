@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.0
+
+- Images can be cropped, rotated and scaled
+- Automatically convert unsupported image formats into supported ones
+- Selected files can be reordered by dragging
+- Metadata (EXIF, GPS, etc.) is stripped from images
+- Support "capture" fields with camera
+
 ## v1.1.1
 
 - Fix some pesky file pickers on some sites
