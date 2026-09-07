@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  editOutputType,
   formatLabel,
   isEncodable,
   renameToType,
@@ -32,6 +33,23 @@ describe('targetTypeFor', () => {
     expect(
       targetTypeFor({ name: 'logo.svg', type: 'image/svg+xml' }, 'image/png'),
     ).toBeNull();
+  });
+});
+
+describe('editOutputType', () => {
+  it('keeps a type the canvas and the field both take', () => {
+    expect(editOutputType(webp, '')).toBe('image/webp');
+    expect(editOutputType(webp, 'image/*')).toBe('image/webp');
+  });
+
+  it('switches to what the field accepts', () => {
+    expect(editOutputType(webp, 'image/jpeg')).toBe('image/jpeg');
+    expect(editOutputType(heic, '')).toBe('image/png');
+    expect(editOutputType(avif, '.jpg,.jpeg')).toBe('image/jpeg');
+  });
+
+  it('falls back to PNG when nothing fits', () => {
+    expect(editOutputType(avif, 'application/pdf')).toBe('image/png');
   });
 });
 

@@ -62,6 +62,24 @@
   "itemConvertedHint": {
     "message": "Converted for this field"
   },
+  "actionEdit": {
+    "message": "Crop, rotate or scale"
+  },
+  "actionRotateLeft": {
+    "message": "Rotate left"
+  },
+  "actionRotateRight": {
+    "message": "Rotate right"
+  },
+  "actionReset": {
+    "message": "Reset"
+  },
+  "actionApplyEdit": {
+    "message": "Apply"
+  },
+  "labelScale": {
+    "message": "Size"
+  },
   "errorClipboardEmpty": {
     "message": "No image or file found in the clipboard."
   },

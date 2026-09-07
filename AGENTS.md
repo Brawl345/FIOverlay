@@ -14,12 +14,14 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
 
 - **`lib/`**: `domains.ts` (synced disabled-domain list, hostname matching, import/export),
   `clipboard.ts` (DataTransfer and Clipboard API → `File[]`, port-based downloads), `files.ts`
-  (`accept` matching, data URLs, names, sizes), `picker-hook.ts` (page-world `click()`/`showPicker()`
-  patch), `base64.ts`, `messages.ts`, `i18n.ts`.
+  (`accept` matching, data URLs, names, sizes), `convert.ts` (canvas encoding, the output type an
+  `accept` leaves possible), `picker-hook.ts` (page-world `click()`/`showPicker()` patch),
+  `base64.ts`, `messages.ts`, `i18n.ts`.
 - **`entrypoints/content/`**: `index.ts` (capture-phase click interception at `document_start`),
   `early-events.ts` (paste/keydown capture registered before page scripts), `overlay.ts`
   (`<dialog>` + closed shadow root, Vue mount, `assignFiles`), `canvas.ts` (bitmap decode/draw),
-  `Overlay.vue`, `Thumbnail.vue`, `Preview.vue`, `Logo.vue`, `overlay.css`.
+  `Overlay.vue`, `Editor.vue` (crop, rotation, scale), `Thumbnail.vue`, `Preview.vue`, `Logo.vue`,
+  `overlay.css`.
 - **`entrypoints/picker.content.ts`**: `world: 'MAIN'` script installing `picker-hook.ts`, which
   announces a picker the isolated world would not see otherwise.
 - **`entrypoints/background.ts`**: per-tab icon state, domain toggle on `action.onClicked`, chunked
@@ -45,10 +47,14 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   button forwards a synthetic click that may drop the modifier.
 - The page's own input is never clicked; the overlay carries its own file input inside the shadow
   root, so the native dialog feeds the queue instead of ending the overlay.
-- The picked file's bytes reach the page unmodified; a rename only re-wraps the same blob in a
-  fresh `File` when the selection is confirmed. Canvas work is display only; `createImageBitmap` is
-  never given both `resizeWidth` and `resizeHeight` unless they already match the natural aspect
-  ratio, because it does not preserve it on its own.
+- A file's bytes only change where the user asked for it: the editor writes crop, rotation and
+  scale back through a canvas, and an image the field's `accept` refuses is re-encoded into a type
+  it takes. A rename re-wraps the same blob in a fresh `File`. Everything else - thumbnails, the
+  large preview - is display only, and `createImageBitmap` is never given both `resizeWidth` and
+  `resizeHeight` unless they already match the natural aspect ratio, because it does not preserve
+  it on its own.
+- An edited item enters the list under a fresh id: `Thumbnail` and the pixel size are read once on
+  mount, so the row has to be remounted to show the new bytes.
 - Pasting takes files and image flavours only; text is ignored without an error. The URL field is
   the deliberate path for a link, so the global paste capture has to step aside whenever a text
   field of ours holds focus and the clipboard carries no file - otherwise the field cannot be

@@ -62,6 +62,24 @@
   "itemConvertedHint": {
     "message": "Für dieses Feld umgewandelt"
   },
+  "actionEdit": {
+    "message": "Zuschneiden, drehen oder skalieren"
+  },
+  "actionRotateLeft": {
+    "message": "Nach links drehen"
+  },
+  "actionRotateRight": {
+    "message": "Nach rechts drehen"
+  },
+  "actionReset": {
+    "message": "Zurücksetzen"
+  },
+  "actionApplyEdit": {
+    "message": "Übernehmen"
+  },
+  "labelScale": {
+    "message": "Größe"
+  },
   "errorClipboardEmpty": {
     "message": "In der Zwischenablage ist kein Bild und keine Datei."
   },

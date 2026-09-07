@@ -39,6 +39,23 @@ export function targetTypeFor(
   );
 }
 
+/**
+ * The type an edited image is written back as: its own, as long as a canvas can
+ * write it and the field takes it, otherwise the first accepted one.
+ */
+export function editOutputType(
+  file: { name: string; type: string },
+  accept: string,
+): EncodableType {
+  const own = isEncodable(file.type) ? file.type : null;
+  const takes = (type: EncodableType): boolean =>
+    !accept.trim() ||
+    matchesAccept({ name: `image.${extensionForMime(type)}`, type }, accept);
+
+  if (own && takes(own)) return own;
+  return ENCODABLE_TYPES.find(takes) ?? 'image/png';
+}
+
 /** `photo.webp` + `image/png` becomes `photo.png`. */
 export function renameToType(name: string, type: string): string {
   return `${splitFileName(name)[0]}.${extensionForMime(type)}`;

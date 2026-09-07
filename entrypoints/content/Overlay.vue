@@ -21,6 +21,7 @@ import {
 } from '../../lib/files';
 import { t } from '../../lib/i18n';
 import type { Dimensions } from './canvas';
+import Editor from './Editor.vue';
 import Logo from './Logo.vue';
 import Preview from './Preview.vue';
 import Thumbnail from './Thumbnail.vue';
@@ -44,6 +45,7 @@ const root = ref<HTMLElement>();
 const picker = ref<HTMLInputElement>();
 const items = shallowRef<Item[]>([]);
 const preview = shallowRef<Item | null>(null);
+const editor = shallowRef<Item | null>(null);
 const url = ref('');
 const error = ref('');
 const notice = ref('');
@@ -252,6 +254,7 @@ function onPicked(event: Event): void {
 
 function remove(id: number): void {
   if (editing.value === id) editing.value = null;
+  if (editor.value?.id === id) editor.value = null;
   items.value = items.value.filter((item) => item.id !== id);
 }
 
@@ -303,6 +306,34 @@ function show(item: Item): void {
   if (item.file.type.startsWith('image/')) preview.value = item;
 }
 
+/** Vector and animated sources have no meaningful canvas round trip. */
+function isEditable(item: Item): boolean {
+  return (
+    item.file.type.startsWith('image/') && item.file.type !== 'image/svg+xml'
+  );
+}
+
+/**
+ * The edited file takes the old one's place. A fresh id remounts the row, so
+ * the thumbnail and the pixel size are read from the new bytes.
+ */
+function applyEdit(file: File): void {
+  const edited = editor.value;
+  editor.value = null;
+  if (!edited) return;
+  items.value = items.value.map((item) =>
+    item.id === edited.id
+      ? {
+          id: nextId++,
+          file,
+          name: file.name,
+          dimensions: null,
+          converted: item.converted,
+        }
+      : item,
+  );
+}
+
 function confirm(): void {
   if (!canConfirm.value) return;
   emit('confirm', items.value.map(fileOf));
@@ -321,6 +352,10 @@ defineExpose({
       preview.value = null;
       return true;
     }
+    if (editor.value) {
+      editor.value = null;
+      return true;
+    }
     if (editing.value !== null) {
       stopRename();
       return true;
@@ -332,6 +367,8 @@ defineExpose({
       preview.value = null;
       return;
     }
+    // The editor has its own confirm button; Enter must not skip past it.
+    if (editor.value) return;
     confirm();
   },
 });
@@ -514,6 +551,25 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
             </span>
           </span>
           <button
+            v-if="isEditable(item)"
+            type="button"
+            class="fio-icon-btn"
+            :aria-label="t('actionEdit')"
+            :title="t('actionEdit')"
+            @click="editor = item"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3Zm10.5-12.5 3 3"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button
             type="button"
             class="fio-icon-btn"
             :aria-label="t('actionRemove')"
@@ -547,6 +603,16 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
         </button>
       </footer>
     </div>
+
+    <Editor
+      v-if="editor"
+      :key="editor.id"
+      :file="editor.file"
+      :name="editor.name"
+      :accept="accept"
+      @apply="applyEdit"
+      @close="editor = null"
+    />
 
     <Preview
       v-if="preview"
