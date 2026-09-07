@@ -21,8 +21,8 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
 - **`entrypoints/content/`**: `index.ts` (capture-phase click interception at `document_start`),
   `early-events.ts` (paste/keydown capture registered before page scripts), `overlay.ts`
   (`<dialog>` + closed shadow root, Vue mount, `assignFiles`), `canvas.ts` (bitmap decode/draw),
-  `Overlay.vue`, `Editor.vue` (crop, rotation, scale), `Thumbnail.vue`, `Preview.vue`, `Logo.vue`,
-  `overlay.css`.
+  `Overlay.vue`, `Editor.vue` (crop, rotation, scale), `Camera.vue` (`getUserMedia` still image),
+  `Thumbnail.vue`, `Preview.vue`, `Logo.vue`, `overlay.css`.
 - **`entrypoints/picker.content.ts`**: `world: 'MAIN'` script installing `picker-hook.ts`, which
   announces a picker the isolated world would not see otherwise.
 - **`entrypoints/background.ts`**: per-tab icon state, domain toggle on `action.onClicked`, chunked
@@ -54,6 +54,9 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   large preview - is display only, and `createImageBitmap` is never given both `resizeWidth` and
   `resizeHeight` unless they already match the natural aspect ratio, because it does not preserve
   it on its own.
+- The camera button only appears on an input that carries `capture` and whose `accept` takes a
+  still image. `getUserMedia` runs in the page's origin, so a page on plain HTTP or with a
+  restrictive permissions policy gets the error message instead of a stream.
 - Metadata removal runs on the raw bytes when the selection is confirmed, never through a canvas:
   a JPEG keeps its APP0 and its ICC profile in APP2, a PNG its `iCCP`, and the image data is
   copied through untouched. A file of another type, or one with nothing to remove, is passed on as

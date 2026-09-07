@@ -32,6 +32,15 @@
   "actionCancel": {
     "message": "Cancel"
   },
+  "actionCamera": {
+    "message": "Take a photo"
+  },
+  "actionShutter": {
+    "message": "Take picture"
+  },
+  "errorCameraFailed": {
+    "message": "The camera could not be opened."
+  },
   "actionFetch": {
     "message": "Load"
   },

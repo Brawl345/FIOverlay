@@ -147,6 +147,8 @@ export function openOverlay(
     app = createApp(Overlay, {
       accept: input.accept ?? '',
       multiple: input.multiple === true,
+      // A page asking for `capture` wants a camera, not a file from the disk.
+      capture: input.getAttribute('capture'),
       onConfirm: (files: File[]) => {
         if (assignFiles(input, files)) close();
         else instance?.fail('errorAssignFailed');

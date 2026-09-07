@@ -9,10 +9,13 @@ import {
 } from '../../lib/clipboard';
 import {
   convertImage,
+  editOutputType,
+  type EncodableType,
   formatLabel,
   targetTypeFor,
 } from '../../lib/convert';
 import {
+  extensionForMime,
   formatSize,
   isDownloadableUrl,
   matchesAccept,
@@ -22,6 +25,7 @@ import {
 import { t } from '../../lib/i18n';
 import { stripMetadata } from '../../lib/metadata';
 import { getStripMetadata } from '../../lib/settings';
+import Camera from './Camera.vue';
 import type { Dimensions } from './canvas';
 import Editor from './Editor.vue';
 import Logo from './Logo.vue';
@@ -37,7 +41,11 @@ interface Item {
   converted: string | null;
 }
 
-const props = defineProps<{ accept: string; multiple: boolean }>();
+const props = defineProps<{
+  accept: string;
+  multiple: boolean;
+  capture: string | null;
+}>();
 const emit = defineEmits<{
   confirm: [files: File[]];
   cancel: [];
@@ -48,6 +56,7 @@ const picker = ref<HTMLInputElement>();
 const items = shallowRef<Item[]>([]);
 const preview = shallowRef<Item | null>(null);
 const editor = shallowRef<Item | null>(null);
+const camera = ref(false);
 const url = ref('');
 const error = ref('');
 const notice = ref('');
@@ -308,6 +317,21 @@ function show(item: Item): void {
   if (item.file.type.startsWith('image/')) preview.value = item;
 }
 
+/** The camera writes a still image, so the field has to take one. */
+const cameraType = computed<EncodableType | null>(() => {
+  if (props.capture === null) return null;
+  if (!navigator.mediaDevices?.getUserMedia) return null;
+  const type = editOutputType({ name: 'camera.jpg', type: 'image/jpeg' }, accept.value);
+  return matchesAccept({ name: `camera.${extensionForMime(type)}`, type }, accept.value || '*/*')
+    ? type
+    : null;
+});
+
+function onShot(file: File): void {
+  camera.value = false;
+  void addFiles([file]);
+}
+
 /** Vector and animated sources have no meaningful canvas round trip. */
 function isEditable(item: Item): boolean {
   return (
@@ -363,6 +387,10 @@ defineExpose({
       preview.value = null;
       return true;
     }
+    if (camera.value) {
+      camera.value = false;
+      return true;
+    }
     if (editor.value) {
       editor.value = null;
       return true;
@@ -378,8 +406,9 @@ defineExpose({
       preview.value = null;
       return;
     }
-    // The editor has its own confirm button; Enter must not skip past it.
-    if (editor.value) return;
+    // The editor and the camera have their own confirm button; Enter must not
+    // skip past it.
+    if (editor.value || camera.value) return;
     void confirm();
   },
 });
@@ -450,6 +479,15 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
             @click="run(filesFromClipboardApi)"
           >
             {{ t('actionPaste') }}
+          </button>
+          <button
+            v-if="cameraType"
+            type="button"
+            class="fio-btn"
+            :disabled="busy"
+            @click="camera = true"
+          >
+            {{ t('actionCamera') }}
           </button>
           <button type="button" class="fio-btn fio-btn-ghost" @click="browse">
             {{ t('actionBrowse') }}
@@ -614,6 +652,14 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
         </button>
       </footer>
     </div>
+
+    <Camera
+      v-if="camera && cameraType"
+      :facing="capture === 'user' ? 'user' : 'environment'"
+      :type="cameraType"
+      @shot="onShot"
+      @close="camera = false"
+    />
 
     <Editor
       v-if="editor"

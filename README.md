@@ -9,6 +9,7 @@ Works in Chrome and Firefox. Completely AI-generated. I don't take feature reque
 - Paste files and copied images with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>V</kbd>.
 - Drag files into the picker.
 - Add a file from a URL.
+- Take a photo with your camera when the field asks for one.
 - Choose files from your device.
 - Check image previews, file sizes, and dimensions before uploading.
 - Crop, rotate, and scale an image right in the picker.
