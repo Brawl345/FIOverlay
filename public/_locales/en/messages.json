@@ -57,7 +57,7 @@
     "message": "Drag to change the order"
   },
   "noticeConverted": {
-    "message": "$1 file(s) were converted to a format this field accepts."
+    "message": "$1 file(s) were converted into the format this field takes."
   },
   "itemConvertedHint": {
     "message": "Converted for this field"
@@ -145,6 +145,21 @@
   },
   "optionsCleared": {
     "message": "List cleared."
+  },
+  "optionsPrivacyTitle": {
+    "message": "Privacy"
+  },
+  "optionsStripMetadata": {
+    "message": "Remove metadata from images"
+  },
+  "optionsStripMetadataHint": {
+    "message": "EXIF, GPS positions and XMP are removed on upload."
+  },
+  "optionsPrivacyOn": {
+    "message": "Metadata is removed."
+  },
+  "optionsPrivacyOff": {
+    "message": "Metadata is kept."
   },
   "optionsBackupTitle": {
     "message": "Backup"

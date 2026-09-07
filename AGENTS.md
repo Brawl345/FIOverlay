@@ -15,7 +15,8 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
 - **`lib/`**: `domains.ts` (synced disabled-domain list, hostname matching, import/export),
   `clipboard.ts` (DataTransfer and Clipboard API → `File[]`, port-based downloads), `files.ts`
   (`accept` matching, data URLs, names, sizes), `convert.ts` (canvas encoding, the output type an
-  `accept` leaves possible), `picker-hook.ts` (page-world `click()`/`showPicker()` patch),
+  `accept` leaves possible), `metadata.ts` (EXIF/XMP/IPTC removal on the byte level),
+  `settings.ts` (synced switches), `picker-hook.ts` (page-world `click()`/`showPicker()` patch),
   `base64.ts`, `messages.ts`, `i18n.ts`.
 - **`entrypoints/content/`**: `index.ts` (capture-phase click interception at `document_start`),
   `early-events.ts` (paste/keydown capture registered before page scripts), `overlay.ts`
@@ -26,7 +27,7 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   announces a picker the isolated world would not see otherwise.
 - **`entrypoints/background.ts`**: per-tab icon state, domain toggle on `action.onClicked`, chunked
   streaming downloads over a `runtime.Port`.
-- **`entrypoints/options/`**: domain list, JSON export/import.
+- **`entrypoints/options/`**: domain list, metadata switch, JSON export/import.
 
 ## Invariants
 
@@ -53,6 +54,10 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   large preview - is display only, and `createImageBitmap` is never given both `resizeWidth` and
   `resizeHeight` unless they already match the natural aspect ratio, because it does not preserve
   it on its own.
+- Metadata removal runs on the raw bytes when the selection is confirmed, never through a canvas:
+  a JPEG keeps its APP0 and its ICC profile in APP2, a PNG its `iCCP`, and the image data is
+  copied through untouched. A file of another type, or one with nothing to remove, is passed on as
+  it is.
 - An edited item enters the list under a fresh id: `Thumbnail` and the pixel size are read once on
   mount, so the row has to be remounted to show the new bytes.
 - Pasting takes files and image flavours only; text is ignored without an error. The URL field is

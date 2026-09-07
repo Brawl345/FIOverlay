@@ -11,8 +11,14 @@ import {
   sortDomains,
 } from '../../lib/domains';
 import { t } from '../../lib/i18n';
+import {
+  getStripMetadata,
+  setStripMetadata,
+  STRIP_METADATA_KEY,
+} from '../../lib/settings';
 
 const domains = ref<string[]>([]);
+const stripMetadata = ref(true);
 const input = ref('');
 const fileInput = ref<HTMLInputElement>();
 const status = ref('');
@@ -27,6 +33,14 @@ function notify(key: string, isError = false, substitution?: string): void {
 
 async function load(): Promise<void> {
   domains.value = await getDisabledDomains();
+  stripMetadata.value = await getStripMetadata();
+}
+
+async function toggleStripMetadata(event: Event): Promise<void> {
+  const enabled = (event.target as HTMLInputElement).checked;
+  stripMetadata.value = enabled;
+  await setStripMetadata(enabled);
+  notify(enabled ? 'optionsPrivacyOn' : 'optionsPrivacyOff');
 }
 
 async function save(next: string[]): Promise<void> {
@@ -88,7 +102,10 @@ async function importDomains(event: Event): Promise<void> {
 }
 
 function onStorageChanged(changes: Record<string, unknown>, area: string): void {
-  if (area === 'sync' && DISABLED_DOMAINS_KEY in changes) void load();
+  if (area !== 'sync') return;
+  if (DISABLED_DOMAINS_KEY in changes || STRIP_METADATA_KEY in changes) {
+    void load();
+  }
 }
 
 onMounted(() => {
@@ -128,6 +145,21 @@ onUnmounted(() => browser.storage.onChanged.removeListener(onStorageChanged));
           </button>
         </li>
       </ul>
+    </section>
+
+    <section class="card">
+      <h2>{{ t('optionsPrivacyTitle') }}</h2>
+      <label class="switch">
+        <input
+          type="checkbox"
+          :checked="stripMetadata"
+          @change="toggleStripMetadata"
+        />
+        <span>
+          <strong>{{ t('optionsStripMetadata') }}</strong>
+          <span class="muted">{{ t('optionsStripMetadataHint') }}</span>
+        </span>
+      </label>
     </section>
 
     <section class="card">
@@ -273,6 +305,27 @@ h2 {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+.switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.switch input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex: none;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.switch span {
+  display: flex;
+  flex-direction: column;
 }
 
 .status {

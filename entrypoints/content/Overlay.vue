@@ -20,6 +20,8 @@ import {
   splitFileName,
 } from '../../lib/files';
 import { t } from '../../lib/i18n';
+import { stripMetadata } from '../../lib/metadata';
+import { getStripMetadata } from '../../lib/settings';
 import type { Dimensions } from './canvas';
 import Editor from './Editor.vue';
 import Logo from './Logo.vue';
@@ -334,9 +336,18 @@ function applyEdit(file: File): void {
   );
 }
 
-function confirm(): void {
+async function confirm(): Promise<void> {
   if (!canConfirm.value) return;
-  emit('confirm', items.value.map(fileOf));
+  busy.value = true;
+  try {
+    const files = items.value.map(fileOf);
+    const clean = (await getStripMetadata())
+      ? await Promise.all(files.map(stripMetadata))
+      : files;
+    emit('confirm', clean);
+  } finally {
+    busy.value = false;
+  }
 }
 
 // Fed by the capture listeners that were installed at document_start.
@@ -369,7 +380,7 @@ defineExpose({
     }
     // The editor has its own confirm button; Enter must not skip past it.
     if (editor.value) return;
-    confirm();
+    void confirm();
   },
 });
 

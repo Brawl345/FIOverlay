@@ -57,7 +57,7 @@
     "message": "Zum Umsortieren ziehen"
   },
   "noticeConverted": {
-    "message": "$1 Datei(en) wurden in ein Format umgewandelt, das dieses Feld akzeptiert."
+    "message": "$1 Datei(en) wurden ins passende Format umgewandelt."
   },
   "itemConvertedHint": {
     "message": "Für dieses Feld umgewandelt"
@@ -145,6 +145,21 @@
   },
   "optionsCleared": {
     "message": "Liste geleert."
+  },
+  "optionsPrivacyTitle": {
+    "message": "Privatsphäre"
+  },
+  "optionsStripMetadata": {
+    "message": "Metadaten aus Bildern entfernen"
+  },
+  "optionsStripMetadataHint": {
+    "message": "EXIF, GPS-Positionen und XMP werden beim Upload entfernt."
+  },
+  "optionsPrivacyOn": {
+    "message": "Metadaten werden entfernt."
+  },
+  "optionsPrivacyOff": {
+    "message": "Metadaten werden nicht entfernt."
   },
   "optionsBackupTitle": {
     "message": "Sicherung"

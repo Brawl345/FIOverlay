@@ -17,6 +17,7 @@ Works in Chrome and Firefox. Completely AI-generated. I don't take feature reque
 - Get an image converted automatically when the field only accepts other formats.
 - Confirm the selection with <kbd>Enter</kbd>, close the overlay with <kbd>Esc</kbd>.
 - Use <kbd>Alt</kbd>/<kbd>Option</kbd>+click when you want to open the browser's normal file picker.
+- Let FIOverlay strip EXIF, GPS positions, and XMP from JPEG, PNG, and WebP uploads. This is on by default and can be switched off in the settings.
 - Turn FIOverlay off for individual websites from the toolbar icon. Your disabled-site list syncs between browsers and can be exported from the settings page.
 
 ## Development
