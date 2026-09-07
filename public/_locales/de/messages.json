@@ -56,6 +56,12 @@
   "hintReorder": {
     "message": "Zum Umsortieren ziehen"
   },
+  "noticeConverted": {
+    "message": "$1 Datei(en) wurden in ein Format umgewandelt, das dieses Feld akzeptiert."
+  },
+  "itemConvertedHint": {
+    "message": "Für dieses Feld umgewandelt"
+  },
   "errorClipboardEmpty": {
     "message": "In der Zwischenablage ist kein Bild und keine Datei."
   },

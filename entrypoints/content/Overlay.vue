@@ -8,6 +8,11 @@ import {
   type PickResult,
 } from '../../lib/clipboard';
 import {
+  convertImage,
+  formatLabel,
+  targetTypeFor,
+} from '../../lib/convert';
+import {
   formatSize,
   isDownloadableUrl,
   matchesAccept,
@@ -25,6 +30,8 @@ interface Item {
   file: File;
   name: string;
   dimensions: Dimensions | null;
+  /** `WEBP → PNG` once the file was re-encoded for the field. */
+  converted: string | null;
 }
 
 const props = defineProps<{ accept: string; multiple: boolean }>();
@@ -39,6 +46,7 @@ const items = shallowRef<Item[]>([]);
 const preview = shallowRef<Item | null>(null);
 const url = ref('');
 const error = ref('');
+const notice = ref('');
 const busy = ref(false);
 const progress = ref<DownloadProgress | null>(null);
 const dragDepth = ref(0);
@@ -75,12 +83,52 @@ const progressLabel = computed(() => {
     : formatSize(current.loaded);
 });
 
-function addFiles(files: readonly File[]): void {
+/**
+ * Takes a file the field would refuse and re-encodes it into a type it accepts,
+ * e.g. a pasted WebP into PNG. Null when that is impossible.
+ */
+async function convertForField(file: File): Promise<Item | null> {
+  const type = targetTypeFor(file, accept.value);
+  if (!type) return null;
+  try {
+    const encoded = await convertImage(file, type);
+    return {
+      id: nextId++,
+      file: encoded,
+      name: encoded.name,
+      dimensions: null,
+      converted: `${formatLabel(file.type)} → ${formatLabel(type)}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function addFiles(files: readonly File[]): Promise<void> {
   const pattern = accept.value;
-  const accepted = files.filter(
-    (file) => !pattern || matchesAccept(file, pattern),
-  );
-  const rejected = files.length - accepted.length;
+  const accepted: Item[] = [];
+  let rejected = 0;
+  let converted = 0;
+
+  for (const file of files) {
+    if (!pattern || matchesAccept(file, pattern)) {
+      accepted.push({
+        id: nextId++,
+        file,
+        name: file.name,
+        dimensions: null,
+        converted: null,
+      });
+      continue;
+    }
+    const item = await convertForField(file);
+    if (!item) {
+      rejected++;
+      continue;
+    }
+    accepted.push(item);
+    converted++;
+  }
 
   if (accepted.length === 0) {
     error.value =
@@ -89,13 +137,10 @@ function addFiles(files: readonly File[]): void {
   }
 
   error.value = rejected > 0 ? t('errorSomeRejected', String(rejected)) : '';
-  const mapped = accepted.map((file) => ({
-    id: nextId++,
-    file,
-    name: file.name,
-    dimensions: null,
-  }));
-  items.value = props.multiple ? [...items.value, ...mapped] : mapped.slice(-1);
+  notice.value = converted > 0 ? t('noticeConverted', String(converted)) : '';
+  items.value = props.multiple
+    ? [...items.value, ...accepted]
+    : accepted.slice(-1);
 }
 
 function measured(id: number, dimensions: Dimensions): void {
@@ -104,8 +149,8 @@ function measured(id: number, dimensions: Dimensions): void {
   );
 }
 
-function apply(result: PickResult): void {
-  if (result.files.length > 0) addFiles(result.files);
+async function apply(result: PickResult): Promise<void> {
+  if (result.files.length > 0) await addFiles(result.files);
   else if (result.error) error.value = t(result.error);
 }
 
@@ -115,9 +160,10 @@ async function run(
   if (busy.value) return;
   busy.value = true;
   error.value = '';
+  notice.value = '';
   progress.value = null;
   try {
-    apply(await task((value) => (progress.value = value)));
+    await apply(await task((value) => (progress.value = value)));
   } catch {
     error.value = t('errorUnexpected');
   } finally {
@@ -199,7 +245,8 @@ function onPicked(event: Event): void {
   input.value = '';
   if (picked.length > 0) {
     error.value = '';
-    addFiles(picked);
+    notice.value = '';
+    void addFiles(picked);
   }
 }
 
@@ -400,6 +447,7 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
 
       <p v-if="accept" class="fio-meta">{{ t('acceptHint', accept) }}</p>
       <p v-if="error" class="fio-error">{{ error }}</p>
+      <p v-if="notice" class="fio-notice">{{ notice }}</p>
 
       <ul v-if="items.length" class="fio-list">
         <li
@@ -456,6 +504,13 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
               <template v-if="item.dimensions">
                 · {{ item.dimensions.width }} × {{ item.dimensions.height }} px
               </template>
+              <span
+                v-if="item.converted"
+                class="fio-tag"
+                :title="t('itemConvertedHint')"
+              >
+                {{ item.converted }}
+              </span>
             </span>
           </span>
           <button

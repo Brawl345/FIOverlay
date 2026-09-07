@@ -56,6 +56,12 @@
   "hintReorder": {
     "message": "Drag to change the order"
   },
+  "noticeConverted": {
+    "message": "$1 file(s) were converted to a format this field accepts."
+  },
+  "itemConvertedHint": {
+    "message": "Converted for this field"
+  },
   "errorClipboardEmpty": {
     "message": "No image or file found in the clipboard."
   },
