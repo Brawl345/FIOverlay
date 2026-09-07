@@ -53,6 +53,9 @@
   "actionRename": {
     "message": "Rename file"
   },
+  "hintReorder": {
+    "message": "Drag to change the order"
+  },
   "errorClipboardEmpty": {
     "message": "No image or file found in the clipboard."
   },

@@ -53,6 +53,9 @@
   "actionRename": {
     "message": "Datei umbenennen"
   },
+  "hintReorder": {
+    "message": "Zum Umsortieren ziehen"
+  },
   "errorClipboardEmpty": {
     "message": "In der Zwischenablage ist kein Bild und keine Datei."
   },

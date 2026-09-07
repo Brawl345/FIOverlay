@@ -316,6 +316,15 @@
   background: var(--fio-zone);
 }
 
+.fio-item.is-movable {
+  cursor: grab;
+}
+
+.fio-item.is-moving {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
 .fio-thumb-btn {
   flex: none;
   border-radius: 8px;

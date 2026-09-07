@@ -44,10 +44,12 @@ const progress = ref<DownloadProgress | null>(null);
 const dragDepth = ref(0);
 const editing = ref<number | null>(null);
 const draft = ref('');
+const reordering = ref<number | null>(null);
 let nextId = 0;
 
 const accept = computed(() => props.accept.trim());
 const dragging = computed(() => dragDepth.value > 0);
+const canReorder = computed(() => items.value.length > 1);
 const canConfirm = computed(() => items.value.length > 0 && !busy.value);
 // Deliberately not gated on the scheme: an unusable URL earns an explanation,
 // not a button that silently stays dead.
@@ -138,12 +140,49 @@ function fetchUrl(): void {
 
 function onDrop(event: DragEvent): void {
   dragDepth.value = 0;
+  if (reordering.value !== null) return;
   const transfer = event.dataTransfer;
   void run((onProgress) => filesFromDataTransfer(transfer, onProgress));
 }
 
 function onDragOver(event: DragEvent): void {
-  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = reordering.value === null ? 'copy' : 'move';
+  }
+}
+
+function onDragEnter(): void {
+  if (reordering.value === null) dragDepth.value++;
+}
+
+function onDragLeave(): void {
+  if (reordering.value === null) dragDepth.value--;
+}
+
+function startReorder(item: Item, event: DragEvent): void {
+  reordering.value = item.id;
+  dragDepth.value = 0;
+  // Firefox only starts a drag once the transfer carries something.
+  event.dataTransfer?.setData('text/plain', item.name);
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+}
+
+/** Live reorder: the row moves as soon as the pointer reaches its neighbour. */
+function reorderOver(target: Item): void {
+  const held = reordering.value;
+  if (held === null || held === target.id) return;
+  const list = [...items.value];
+  const from = list.findIndex((item) => item.id === held);
+  const to = list.findIndex((item) => item.id === target.id);
+  const moved = list[from];
+  if (from < 0 || to < 0 || !moved) return;
+  list.splice(from, 1);
+  list.splice(to, 0, moved);
+  items.value = list;
+}
+
+function endReorder(): void {
+  reordering.value = null;
 }
 
 /**
@@ -261,8 +300,8 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
     @click.stop
     @mousedown.stop
     @keydown.stop
-    @dragenter.prevent.stop="dragDepth++"
-    @dragleave.prevent.stop="dragDepth--"
+    @dragenter.prevent.stop="onDragEnter"
+    @dragleave.prevent.stop="onDragLeave"
     @dragover.prevent.stop="onDragOver"
     @drop.prevent.stop="onDrop"
   >
@@ -363,7 +402,22 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
       <p v-if="error" class="fio-error">{{ error }}</p>
 
       <ul v-if="items.length" class="fio-list">
-        <li v-for="item in items" :key="item.id" class="fio-item">
+        <li
+          v-for="item in items"
+          :key="item.id"
+          class="fio-item"
+          :class="{
+            'is-movable': canReorder && editing !== item.id,
+            'is-moving': reordering === item.id,
+          }"
+          :draggable="canReorder && editing !== item.id"
+          :title="canReorder && editing !== item.id ? t('hintReorder') : undefined"
+          @dragstart.stop="startReorder(item, $event)"
+          @dragenter.prevent.stop="reorderOver(item)"
+          @dragover.prevent.stop="onDragOver"
+          @drop.prevent.stop="endReorder"
+          @dragend.stop="endReorder"
+        >
           <button
             type="button"
             class="fio-thumb-btn"
