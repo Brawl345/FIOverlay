@@ -3,6 +3,7 @@
 ## v2.1.0
 
 - Can overwrite date with current date per file
+- Replace icons for rotating images
 
 ## v2.0.0
 
