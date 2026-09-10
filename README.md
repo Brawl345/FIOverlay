@@ -14,6 +14,7 @@ Works in Chrome and Firefox. Completely AI-generated. I don't take feature reque
 - Check image previews, file sizes, and dimensions before uploading.
 - Crop, rotate, and scale an image right in the picker.
 - Rename a file by clicking its name in the list.
+- Can overwrite date with current date per file
 - Drag the entries to change the order they are handed over in.
 - Get an image converted automatically when the field only accepts other formats.
 - Confirm the selection with <kbd>Enter</kbd>, close the overlay with <kbd>Esc</kbd>.

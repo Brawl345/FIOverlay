@@ -74,6 +74,9 @@
   "actionEdit": {
     "message": "Zuschneiden, drehen oder skalieren"
   },
+  "actionResetDate": {
+    "message": "Aktuelles Datum übernehmen"
+  },
   "actionRotateLeft": {
     "message": "Nach links drehen"
   },

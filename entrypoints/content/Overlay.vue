@@ -39,6 +39,8 @@ interface Item {
   dimensions: Dimensions | null;
   /** `WEBP → PNG` once the file was re-encoded for the field. */
   converted: string | null;
+  /** The file goes to the page with the current time as its modified date. */
+  resetDate: boolean;
 }
 
 const props = defineProps<{
@@ -111,6 +113,7 @@ async function convertForField(file: File): Promise<Item | null> {
       name: encoded.name,
       dimensions: null,
       converted: `${formatLabel(file.type)} → ${formatLabel(type)}`,
+      resetDate: false,
     };
   } catch {
     return null;
@@ -131,6 +134,7 @@ async function addFiles(files: readonly File[]): Promise<void> {
         name: file.name,
         dimensions: null,
         converted: null,
+        resetDate: false,
       });
       continue;
     }
@@ -304,13 +308,19 @@ function renameTo(input: string, previous: string): string {
     : cleaned + splitFileName(previous)[1];
 }
 
-/** The bytes stay untouched; only the name the page receives changes. */
+/** The bytes stay untouched; only the name and the date the page reads change. */
 function fileOf(item: Item): File {
-  if (item.name === item.file.name) return item.file;
+  if (item.name === item.file.name && !item.resetDate) return item.file;
   return new File([item.file], item.name, {
     type: item.file.type,
-    lastModified: item.file.lastModified,
+    lastModified: item.resetDate ? Date.now() : item.file.lastModified,
   });
+}
+
+function toggleDate(id: number): void {
+  items.value = items.value.map((item) =>
+    item.id === id ? { ...item, resetDate: !item.resetDate } : item,
+  );
 }
 
 function show(item: Item): void {
@@ -355,6 +365,7 @@ function applyEdit(file: File): void {
           name: file.name,
           dimensions: null,
           converted: item.converted,
+          resetDate: item.resetDate,
         }
       : item,
   );
@@ -472,6 +483,9 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
         <p class="fio-zone-title">{{ t('dropTitle') }}</p>
         <p class="fio-zone-hint">{{ pasteHint }}</p>
         <div class="fio-zone-actions">
+          <button type="button" class="fio-btn fio-btn-ghost" @click="browse">
+            {{ t('actionBrowse') }}
+          </button>
           <button
             type="button"
             class="fio-btn"
@@ -488,9 +502,6 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
             @click="camera = true"
           >
             {{ t('actionCamera') }}
-          </button>
-          <button type="button" class="fio-btn fio-btn-ghost" @click="browse">
-            {{ t('actionBrowse') }}
           </button>
         </div>
         <input
@@ -599,6 +610,26 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
               </span>
             </span>
           </span>
+          <button
+            type="button"
+            class="fio-icon-btn"
+            :class="{ 'is-on': item.resetDate }"
+            :aria-pressed="item.resetDate"
+            :aria-label="t('actionResetDate')"
+            :title="t('actionResetDate')"
+            @click="toggleDate(item.id)"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M3 12a9 9 0 1 0 2.6-6.4L3 8M3 3v5h5M12 7.5V12l3.5 2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
           <button
             v-if="isEditable(item)"
             type="button"

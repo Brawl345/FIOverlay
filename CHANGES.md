@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.1.0
+
+- Can overwrite date with current date per file
+
 ## v2.0.0
 
 - Images can be cropped, rotated and scaled

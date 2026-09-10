@@ -50,7 +50,8 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   root, so the native dialog feeds the queue instead of ending the overlay.
 - A file's bytes only change where the user asked for it: the editor writes crop, rotation and
   scale back through a canvas, and an image the field's `accept` refuses is re-encoded into a type
-  it takes. A rename re-wraps the same blob in a fresh `File`. Everything else - thumbnails, the
+  it takes. A rename, and the clock button that puts the current time into `lastModified`,
+  re-wrap the same blob in a fresh `File`. Everything else - thumbnails, the
   large preview - is display only, and `createImageBitmap` is never given both `resizeWidth` and
   `resizeHeight` unless they already match the natural aspect ratio, because it does not preserve
   it on its own.

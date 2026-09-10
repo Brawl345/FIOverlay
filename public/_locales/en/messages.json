@@ -74,6 +74,9 @@
   "actionEdit": {
     "message": "Crop, rotate or scale"
   },
+  "actionResetDate": {
+    "message": "Use current date"
+  },
   "actionRotateLeft": {
     "message": "Rotate left"
   },
