@@ -77,6 +77,12 @@
   "actionResetDate": {
     "message": "Aktuelles Datum übernehmen"
   },
+  "actionRehash": {
+    "message": "Neuer Datei-Hash"
+  },
+  "actionRehashHint": {
+    "message": "Bild mit einer unsichtbaren Pixel-Änderung neu schreiben, damit sich der Hash unterscheidet"
+  },
   "actionRotateLeft": {
     "message": "Nach links drehen"
   },
@@ -121,6 +127,9 @@
   },
   "errorUnexpected": {
     "message": "Da ist etwas schiefgelaufen."
+  },
+  "errorRehashFailed": {
+    "message": "Die Datei konnte nicht vorbereitet werden."
   },
   "optionsTitle": {
     "message": "FIOverlay"

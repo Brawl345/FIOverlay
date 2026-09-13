@@ -24,6 +24,7 @@ import {
 } from '../../lib/files';
 import { t } from '../../lib/i18n';
 import { stripMetadata } from '../../lib/metadata';
+import { canRehash, rehashFile } from '../../lib/rehash';
 import { getStripMetadata } from '../../lib/settings';
 import Camera from './Camera.vue';
 import type { Dimensions } from './canvas';
@@ -41,6 +42,8 @@ interface Item {
   converted: string | null;
   /** The file goes to the page with the current time as its modified date. */
   resetDate: boolean;
+  /** The file is written again with changed pixels, so its hash differs. */
+  rehash: boolean;
 }
 
 const props = defineProps<{
@@ -114,6 +117,7 @@ async function convertForField(file: File): Promise<Item | null> {
       dimensions: null,
       converted: `${formatLabel(file.type)} → ${formatLabel(type)}`,
       resetDate: false,
+      rehash: false,
     };
   } catch {
     return null;
@@ -135,6 +139,7 @@ async function addFiles(files: readonly File[]): Promise<void> {
         dimensions: null,
         converted: null,
         resetDate: false,
+        rehash: false,
       });
       continue;
     }
@@ -323,6 +328,12 @@ function toggleDate(id: number): void {
   );
 }
 
+function toggleRehash(id: number): void {
+  items.value = items.value.map((item) =>
+    item.id === id ? { ...item, rehash: !item.rehash } : item,
+  );
+}
+
 function show(item: Item): void {
   if (item.file.type.startsWith('image/')) preview.value = item;
 }
@@ -366,6 +377,7 @@ function applyEdit(file: File): void {
           dimensions: null,
           converted: item.converted,
           resetDate: item.resetDate,
+          rehash: item.rehash && canRehash(file),
         }
       : item,
   );
@@ -375,11 +387,19 @@ async function confirm(): Promise<void> {
   if (!canConfirm.value) return;
   busy.value = true;
   try {
-    const files = items.value.map(fileOf);
-    const clean = (await getStripMetadata())
-      ? await Promise.all(files.map(stripMetadata))
-      : files;
-    emit('confirm', clean);
+    const strip = await getStripMetadata();
+    // The pixels are touched last: a strip that runs afterwards could take the
+    // change with it.
+    const files = await Promise.all(
+      items.value.map(async (item) => {
+        const file = fileOf(item);
+        const clean = strip ? await stripMetadata(file) : file;
+        return item.rehash ? await rehashFile(clean) : clean;
+      }),
+    );
+    emit('confirm', files);
+  } catch {
+    error.value = t('errorRehashFailed');
   } finally {
     busy.value = false;
   }
@@ -627,6 +647,26 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
                 stroke-width="1.7"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button
+            v-if="canRehash(item.file)"
+            type="button"
+            class="fio-icon-btn"
+            :class="{ 'is-on': item.rehash }"
+            :aria-pressed="item.rehash"
+            :aria-label="t('actionRehash')"
+            :title="t('actionRehashHint')"
+            @click="toggleRehash(item.id)"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9.5 4 7.5 20m9-16-2 16M4.5 9h15m-16 6h15"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
               />
             </svg>
           </button>

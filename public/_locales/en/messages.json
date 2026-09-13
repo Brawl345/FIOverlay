@@ -77,6 +77,12 @@
   "actionResetDate": {
     "message": "Use current date"
   },
+  "actionRehash": {
+    "message": "New file hash"
+  },
+  "actionRehashHint": {
+    "message": "Write the image again with an invisible pixel change, so its hash differs"
+  },
   "actionRotateLeft": {
     "message": "Rotate left"
   },
@@ -121,6 +127,9 @@
   },
   "errorUnexpected": {
     "message": "Something went wrong."
+  },
+  "errorRehashFailed": {
+    "message": "The file could not be prepared."
   },
   "optionsTitle": {
     "message": "FIOverlay"

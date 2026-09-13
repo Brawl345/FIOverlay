@@ -16,6 +16,7 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   `clipboard.ts` (DataTransfer and Clipboard API → `File[]`, port-based downloads), `files.ts`
   (`accept` matching, data URLs, names, sizes), `convert.ts` (canvas encoding, the output type an
   `accept` leaves possible), `metadata.ts` (EXIF/XMP/IPTC removal on the byte level),
+  `rehash.ts` (invisible pixel change plus re-encode, for a different file hash),
   `settings.ts` (synced switches), `picker-hook.ts` (page-world `click()`/`showPicker()` patch),
   `base64.ts`, `messages.ts`, `i18n.ts`.
 - **`entrypoints/content/`**: `index.ts` (capture-phase click interception at `document_start`),
@@ -58,6 +59,10 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
 - The camera button only appears on an input that carries `capture` and whose `accept` takes a
   still image. `getUserMedia` runs in the page's origin, so a page on plain HTTP or with a
   restrictive permissions policy gets the error message instead of a stream.
+- The hash button re-encodes the image with one 8×8 block moved by a single step. A whole block
+  shifts the DC coefficient far enough that a JPEG round trip keeps the change, where a single
+  pixel would be quantized away. It runs after metadata removal, so nothing can take the change
+  with it, and it is offered only for the types a canvas can write.
 - Metadata removal runs on the raw bytes when the selection is confirmed, never through a canvas:
   a JPEG keeps its APP0 and its ICC profile in APP2, a PNG its `iCCP`, and the image data is
   copied through untouched. A file of another type, or one with nothing to remove, is passed on as

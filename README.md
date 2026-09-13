@@ -15,6 +15,7 @@ Works in Chrome and Firefox. Completely AI-generated. I don't take feature reque
 - Crop, rotate, and scale an image right in the picker.
 - Rename a file by clicking its name in the list.
 - Can overwrite date with current date per file
+- Give an image a different file hash per file. The picture is written again with a pixel change you cannot see, so the upload does not match a copy you sent somewhere else.
 - Drag the entries to change the order they are handed over in.
 - Get an image converted automatically when the field only accepts other formats.
 - Confirm the selection with <kbd>Enter</kbd>, close the overlay with <kbd>Esc</kbd>.

@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.2.0
+
+- Can give an image a different file hash per file
+
 ## v2.1.0
 
 - Can overwrite date with current date per file
