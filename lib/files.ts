@@ -56,6 +56,32 @@ export function matchesAccept(
   });
 }
 
+const LABEL_ALIASES: Record<string, string> = {
+  JPEG: 'JPG',
+  'SVG+XML': 'SVG',
+  'X-ICON': 'ICO',
+  'VND.MICROSOFT.ICON': 'ICO',
+};
+
+/**
+ * Short, deduplicated labels for an `accept` list: `image/*` stays a group
+ * (`image/*`), `image/jpeg`, `.jpg` and `.jpeg` all become `JPG`.
+ */
+export function acceptLabels(accept: string): string[] {
+  const labels = accept
+    .split(',')
+    .map((token) => token.trim().toLowerCase())
+    .filter((token) => token && token !== '*/*')
+    .map((token) => {
+      if (token.endsWith('/*')) return token;
+      const raw = (
+        token.startsWith('.') ? token.slice(1) : (token.split('/')[1] ?? token)
+      ).toUpperCase();
+      return LABEL_ALIASES[raw] ?? raw;
+    });
+  return [...new Set(labels)];
+}
+
 export function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   const units = ['KB', 'MB', 'GB'];
@@ -93,6 +119,13 @@ export function imageUrlFromHtml(html: string): string | null {
 
 export function isDownloadableUrl(text: string): boolean {
   return /^(https?|data):/i.test(text.trim());
+}
+
+/** The clipboard text when it is nothing but one loadable link. */
+export function linkFromText(text: string): string | null {
+  const value = text.trim();
+  if (!value || /\s/.test(value) || !isDownloadableUrl(value)) return null;
+  return value;
 }
 
 /** Splits `photo.png` into `['photo', '.png']`; a name without one keeps `''`. */

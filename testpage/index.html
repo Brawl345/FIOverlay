@@ -139,7 +139,7 @@
   <h2>Real clipboard</h2>
   <div class="card">
     <p class="hint">Writes to the system clipboard. Open an input afterwards and press ⌘V or use the paste button.
-      URLs belong in the overlay's URL field, where no restriction applies.</p>
+      A pasted link is loaded like a page-supplied one; typed into the URL field (U), it has no restriction.</p>
     <div class="payload-list" id="clipboard"></div>
   </div>
 
@@ -347,7 +347,10 @@ const PAYLOADS = [
   { group: 'Page-supplied image links', id: 'html-large', label: 'Too large', note: 'Declares 64 MB + 1 byte', html: () => imgHtml(url('/too-large.png')) },
   { group: 'Page-supplied image links', id: 'html-bidi', label: 'Bidi file name', note: 'Content-Disposition with U+202E', html: () => imgHtml(url('/disposition.png')) },
   { group: 'Page-supplied image links', id: 'html-data', label: 'data: URL', note: 'No download', html: async () => imgHtml(drawSample('data:', 120, 80).toDataURL('image/png')) },
-  { group: 'Other', id: 'text-only', label: 'Plain text', note: 'Ignored without an error', text: () => 'just some text' },
+  { group: 'Plain-text links', id: 'text-link', label: 'Same origin link', note: 'Downloads', text: () => url('/image.png') },
+  { group: 'Plain-text links', id: 'text-link-private', label: 'Other local origin link', note: `${OTHER_HOST}: blocked, local network`, text: () => url('/image.png', OTHER_HOST) },
+  { group: 'Plain-text links', id: 'text-link-text', label: 'Link to a non-image', note: 'Blocked, not an image', text: () => url('/not-an-image') },
+  { group: 'Plain-text links', id: 'text-only', label: 'Plain text', note: 'Ignored without an error', text: () => 'just some text' },
 ];
 
 /** name → { sha, lastModified } of every file a payload produced. */
@@ -502,6 +505,7 @@ const CASES = [
   { id: 'images', title: 'Images, multiple', hint: '<code>accept="image/*" multiple</code>', expect: 'Overlay; all images are queued.', html: '<input type="file" accept="image/*" multiple>' },
   { id: 'jpeg', title: 'JPEG only', hint: '<code>accept="image/jpeg"</code>', expect: 'PNG and WebP are converted to JPEG; SVG and text are refused.', html: '<input type="file" accept="image/jpeg" multiple>' },
   { id: 'png-ext', title: 'PNG by extension', hint: '<code>accept=".png"</code>', expect: 'JPEG and WebP are converted to PNG.', html: '<input type="file" accept=".png">' },
+  { id: 'long-accept', title: 'Long accept list', hint: '13 extensions and types', expect: 'The header badge shows two labels and "+N"; the full list is in its tooltip.', html: '<input type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.heic,.heif,.bmp,.tif,.tiff,.svg,image/x-icon,application/pdf" multiple>' },
   { id: 'documents', title: 'Documents only', hint: '<code>accept=".pdf,application/pdf"</code>', expect: 'Images are refused with the accept hint.', html: '<input type="file" accept=".pdf,application/pdf">' },
   { id: 'camera', title: 'Camera capture', hint: '<code>accept="image/*" capture="environment"</code>', expect: 'The overlay shows a camera button.', html: '<input type="file" accept="image/*" capture="environment">' },
   { id: 'label', title: 'Styled label', hint: 'Hidden input inside a <code>&lt;label&gt;</code>.', expect: 'Clicking the label opens the overlay.', html: '<label class="button primary">Upload photo<input type="file" accept="image/*" class="hidden-input"></label>' },

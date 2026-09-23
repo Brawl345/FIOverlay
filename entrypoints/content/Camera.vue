@@ -87,7 +87,7 @@ onUnmounted(() => {
     />
 
     <div class="fio-camera-bar">
-      <button type="button" class="fio-btn fio-btn-ghost" @click="emit('close')">
+      <button type="button" class="fio-btn" @click="emit('close')">
         {{ t('actionCancel') }}
       </button>
       <button

@@ -36,6 +36,8 @@ const rotation = ref(0);
 const crop = ref<Rect>({ x: 0, y: 0, width: 0, height: 0 });
 const percent = ref(100);
 const display = ref({ width: 0, height: 0 });
+/** A crop drag is under way; the thirds grid shows more clearly. */
+const active = ref(false);
 
 let grab: Grab | null = null;
 let origin = { x: 0, y: 0 };
@@ -181,6 +183,7 @@ function pointIn(event: PointerEvent): { x: number; y: number } {
 
 function start(event: PointerEvent, kind: Grab): void {
   grab = kind;
+  active.value = true;
   origin = pointIn(event);
   before = { ...crop.value };
   if (kind.kind === 'draw') {
@@ -231,6 +234,7 @@ function onMove(event: PointerEvent): void {
 function onUp(event: PointerEvent): void {
   if (!grab) return;
   grab = null;
+  active.value = false;
   capture(event, false);
   const size = rotated.value;
   const area = crop.value;
@@ -382,111 +386,112 @@ onUnmounted(() => {
 
 <template>
   <div class="fio-editor">
-    <p v-if="failed" class="fio-editor-failed">{{ t('errorPreviewFailed') }}</p>
-
-    <div
-      v-else
-      ref="frame"
-      class="fio-editor-frame"
-      :style="frameStyle"
-      @pointerdown.stop="start($event, { kind: 'draw' })"
-      @pointermove.stop="onMove"
-      @pointerup.stop="onUp"
-      @pointercancel.stop="onUp"
-    >
-      <canvas ref="canvas" class="fio-editor-canvas" />
-      <div
-        class="fio-crop"
-        :style="cropStyle"
-        @pointerdown.stop="start($event, { kind: full ? 'draw' : 'move' })"
+    <header class="fio-editor-top">
+      <div class="fio-editor-info">
+        <p class="fio-editor-name">{{ outputName }}</p>
+        <p class="fio-editor-meta" aria-live="polite">
+          {{ outputSize }} · {{ output.width }} × {{ output.height }} px
+        </p>
+      </div>
+      <button type="button" class="fio-btn" @click="emit('close')">
+        {{ t('actionCancel') }}
+      </button>
+      <button
+        type="button"
+        class="fio-btn fio-btn-primary"
+        :disabled="busy || failed"
+        @click="save"
       >
-        <span
-          v-for="corner in CORNERS"
-          :key="corner"
-          class="fio-crop-handle"
-          :class="`is-${corner}`"
-          @pointerdown.stop="start($event, { kind: 'corner', corner })"
-        />
+        {{ t('actionApplyEdit') }}
+      </button>
+    </header>
+
+    <div class="fio-editor-stage">
+      <p v-if="failed" class="fio-editor-failed">
+        {{ t('errorPreviewFailed') }}
+      </p>
+      <div
+        v-else
+        ref="frame"
+        class="fio-editor-frame"
+        :style="frameStyle"
+        @pointerdown.stop="start($event, { kind: 'draw' })"
+        @pointermove.stop="onMove"
+        @pointerup.stop="onUp"
+        @pointercancel.stop="onUp"
+      >
+        <canvas ref="canvas" class="fio-editor-canvas" />
+        <div
+          class="fio-crop"
+          :class="{ 'is-active': active }"
+          :style="cropStyle"
+          @pointerdown.stop="start($event, { kind: full ? 'draw' : 'move' })"
+        >
+          <span
+            v-for="corner in CORNERS"
+            :key="corner"
+            class="fio-crop-handle"
+            :class="`is-${corner}`"
+            @pointerdown.stop="start($event, { kind: 'corner', corner })"
+          />
+        </div>
       </div>
     </div>
 
     <div class="fio-editor-bar">
-      <div class="fio-editor-tools">
-        <button
-          type="button"
-          class="fio-icon-btn"
-          :aria-label="t('actionRotateLeft')"
-          :title="t('actionRotateLeft')"
-          @click="rotate(-90)"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="fio-icon-btn"
-          :aria-label="t('actionRotateRight')"
-          :title="t('actionRotateRight')"
-          @click="rotate(90)"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8M21 3v5h-5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <label class="fio-editor-scale">
-          <span>{{ t('labelScale') }}</span>
-          <input
-            v-model.number="percent"
-            type="range"
-            min="5"
-            max="100"
-            step="1"
-            class="fio-range"
+      <button
+        type="button"
+        class="fio-icon-btn"
+        :aria-label="t('actionRotateLeft')"
+        :title="t('actionRotateLeft')"
+        @click="rotate(-90)"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           />
-          <span class="fio-editor-value">{{ percent }} %</span>
-        </label>
-      </div>
-
-      <p class="fio-editor-meta" aria-live="polite">
-        {{ outputName }} · {{ outputSize }} · {{ output.width }} ×
-        {{ output.height }} px
-      </p>
-
-      <div class="fio-editor-actions">
-        <button type="button" class="fio-btn fio-btn-ghost" @click="reset">
-          {{ t('actionReset') }}
-        </button>
-        <button
-          type="button"
-          class="fio-btn fio-btn-ghost"
-          @click="emit('close')"
-        >
-          {{ t('actionCancel') }}
-        </button>
-        <button
-          type="button"
-          class="fio-btn fio-btn-primary"
-          :disabled="busy || failed"
-          @click="save"
-        >
-          {{ t('actionApplyEdit') }}
-        </button>
-      </div>
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="fio-icon-btn"
+        :aria-label="t('actionRotateRight')"
+        :title="t('actionRotateRight')"
+        @click="rotate(90)"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8M21 3v5h-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+      <span class="fio-editor-divider" />
+      <label class="fio-editor-scale">
+        <span>{{ t('labelScale') }}</span>
+        <input
+          v-model.number="percent"
+          type="range"
+          min="5"
+          max="100"
+          step="1"
+          class="fio-range"
+        />
+        <span class="fio-editor-value">{{ percent }} %</span>
+      </label>
+      <span class="fio-editor-divider" />
+      <button type="button" class="fio-btn fio-btn-plain" @click="reset">
+        {{ t('actionReset') }}
+      </button>
     </div>
   </div>
 </template>

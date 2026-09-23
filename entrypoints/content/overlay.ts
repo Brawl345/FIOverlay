@@ -9,6 +9,7 @@ interface OverlayInstance {
   fail: (messageKey: string) => void;
   dismiss: () => boolean;
   submit: () => void;
+  shortcut: (key: string) => boolean;
 }
 
 /**
@@ -51,15 +52,31 @@ function style(
   }
 }
 
-/** `shadow.activeElement` still resolves inside a closed root we hold. */
-function isTextFieldFocused(shadow: ShadowRoot): boolean {
-  const active = shadow.activeElement as HTMLElement | null;
+function isEditable(element: Element | null): boolean {
+  const active = element as HTMLElement | null;
   if (!active) return false;
   if (active.isContentEditable) return true;
   if (active.tagName === 'TEXTAREA') return true;
   return (
     active.tagName === 'INPUT' && (active as HTMLInputElement).type !== 'file'
   );
+}
+
+/** `shadow.activeElement` still resolves inside a closed root we hold. */
+function isTextFieldFocused(shadow: ShadowRoot): boolean {
+  return isEditable(shadow.activeElement);
+}
+
+/**
+ * A page field can only hold focus when the dialog could not go modal; typing
+ * there must not paste, confirm or open a source in the overlay.
+ */
+function isPageFieldFocused(host: HTMLElement): boolean {
+  let active = document.activeElement;
+  while (active?.shadowRoot?.activeElement) {
+    active = active.shadowRoot.activeElement;
+  }
+  return active !== host && isEditable(active);
 }
 
 /**
@@ -166,6 +183,7 @@ export function openOverlay(
 
     release = captureEvents({
       paste: (event) => {
+        if (isPageFieldFocused(host)) return;
         const clipboard = (event as ClipboardEvent).clipboardData;
         // Typing into our own URL field must keep working - only real files
         // are worth taking away from a focused text field.
@@ -185,8 +203,18 @@ export function openOverlay(
           if (!instance?.dismiss()) close();
           return;
         }
-        if (key.key !== 'Enter') return;
         if (key.isComposing || key.altKey || key.ctrlKey || key.metaKey) return;
+        if (isPageFieldFocused(host)) return;
+        if (key.key !== 'Enter') {
+          // Single letters open a source, unless they are being typed.
+          if (key.key.length !== 1 || key.repeat) return;
+          if (isTextFieldFocused(shadow)) return;
+          if (instance?.shortcut(key.key)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+          return;
+        }
         if (ownsEnter(shadow)) return;
         event.preventDefault();
         event.stopImmediatePropagation();

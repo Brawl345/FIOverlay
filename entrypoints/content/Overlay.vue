@@ -15,6 +15,7 @@ import {
   targetTypeFor,
 } from '../../lib/convert';
 import {
+  acceptLabels,
   extensionForMime,
   formatSize,
   isDownloadableUrl,
@@ -64,7 +65,6 @@ const editor = shallowRef<Item | null>(null);
 const camera = ref(false);
 const url = ref('');
 const error = ref('');
-const notice = ref('');
 const busy = ref(false);
 const progress = ref<DownloadProgress | null>(null);
 const dragDepth = ref(0);
@@ -73,7 +73,32 @@ const draft = ref('');
 const reordering = ref<number | null>(null);
 const discarding = ref(false);
 const keepButton = ref<HTMLButtonElement>();
+const urlOpen = ref(false);
+const urlField = ref<HTMLInputElement>();
+const stripping = ref(true);
 let nextId = 0;
+
+const PASTE_KEY = /mac/i.test(navigator.userAgent) ? '⌘V' : 'Ctrl+V';
+const ACCEPT_GROUPS: Record<string, string> = {
+  'image/*': 'acceptGroupImage',
+  'video/*': 'acceptGroupVideo',
+  'audio/*': 'acceptGroupAudio',
+  'text/*': 'acceptGroupText',
+};
+/** Paths on a 24×24 stroke grid. */
+const ICONS = {
+  upload:
+    'M12 15.5V4m0 0L8.2 7.8M12 4l3.8 3.8M4 14v3.5A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V14',
+  paste:
+    'M9 3.5h6v3H9zM15 5h1.5A1.5 1.5 0 0 1 18 6.5v12a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 18.5v-12A1.5 1.5 0 0 1 7.5 5H9',
+  browse:
+    'M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z',
+  camera:
+    'M4 8.5A2.5 2.5 0 0 1 6.5 6H8l1.5-2h5L16 6h1.5A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5zM15.5 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z',
+  url: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+  discard:
+    'M4.5 7h15M10 4h4M6.5 7l.8 11.2A2 2 0 0 0 9.3 20h5.4a2 2 0 0 0 2-1.8L17.5 7M10 11v5M14 11v5',
+};
 
 const accept = computed(() => props.accept.trim());
 const dragging = computed(() => dragDepth.value > 0);
@@ -82,9 +107,37 @@ const canConfirm = computed(() => items.value.length > 0 && !busy.value);
 // Deliberately not gated on the scheme: an unusable URL earns an explanation,
 // not a button that silently stays dead.
 const canFetch = computed(() => !busy.value && url.value.trim().length > 0);
-const pasteHint = computed(() =>
-  t('dropHint', /mac/i.test(navigator.userAgent) ? '⌘V' : 'Ctrl+V'),
+const title = computed(() =>
+  t(props.multiple ? 'overlayTitleMany' : 'overlayTitle'),
 );
+/** Two labels at most, so an obscure list of twenty types stays one line. */
+const acceptBadge = computed(() => {
+  const labels = acceptLabels(accept.value).map((label) => {
+    const group = ACCEPT_GROUPS[label];
+    return group ? t(group) : label;
+  });
+  if (labels.length === 0) return null;
+  const shown = labels.slice(0, 2).join(' · ');
+  return labels.length > 2 ? `${shown} +${labels.length - 2}` : shown;
+});
+/** Counts what the list holds now, not what the last paste brought in. */
+const notice = computed(() => {
+  const converted = items.value.filter((item) => item.converted !== null).length;
+  if (converted === 0) return '';
+  return converted === 1
+    ? t('noticeConvertedOne')
+    : t('noticeConverted', String(converted));
+});
+const summary = computed(() => {
+  const list = items.value;
+  if (list.length === 0) return t('summaryEmpty');
+  const size = formatSize(list.reduce((sum, item) => sum + item.file.size, 0));
+  const base =
+    list.length === 1
+      ? t('summaryOne', size)
+      : t('summaryMany', [String(list.length), size]);
+  return stripping.value ? `${base} · ${t('summaryStripped')}` : base;
+});
 const discardText = computed(() =>
   items.value.length > 1
     ? t('discardTextMany', String(items.value.length))
@@ -151,7 +204,6 @@ async function addFiles(files: readonly File[]): Promise<void> {
   );
   const accepted = results.filter((item): item is Item => item !== null);
   const rejected = results.length - accepted.length;
-  const converted = accepted.filter((item) => item.converted !== null).length;
 
   if (accepted.length === 0) {
     error.value =
@@ -159,8 +211,12 @@ async function addFiles(files: readonly File[]): Promise<void> {
     return;
   }
 
-  error.value = rejected > 0 ? t('errorSomeRejected', String(rejected)) : '';
-  notice.value = converted > 0 ? t('noticeConverted', String(converted)) : '';
+  error.value =
+    rejected === 0
+      ? ''
+      : rejected === 1
+        ? t('errorSomeRejectedOne')
+        : t('errorSomeRejected', String(rejected));
   items.value = props.multiple
     ? [...items.value, ...accepted]
     : accepted.slice(-1);
@@ -183,7 +239,6 @@ async function run(
   if (busy.value) return;
   busy.value = true;
   error.value = '';
-  notice.value = '';
   progress.value = null;
   try {
     await apply(await task((value) => (progress.value = value)));
@@ -204,6 +259,8 @@ function fetchUrl(): void {
   }
   void run((onProgress) => downloadUrl(target, onProgress)).then(() => {
     if (!error.value) url.value = '';
+    // The field was disabled during the download and lost focus.
+    if (urlOpen.value) void nextTick(() => urlField.value?.focus());
   });
 }
 
@@ -254,6 +311,29 @@ function endReorder(): void {
   reordering.value = null;
 }
 
+// A row only claims its own reorder drag; a file dragged in from outside
+// bubbles on to the root, which counts it and takes the drop.
+function onRowDragEnter(item: Item, event: DragEvent): void {
+  if (reordering.value === null) return;
+  event.preventDefault();
+  event.stopPropagation();
+  reorderOver(item);
+}
+
+function onRowDragOver(event: DragEvent): void {
+  if (reordering.value === null) return;
+  event.preventDefault();
+  event.stopPropagation();
+  onDragOver(event);
+}
+
+function onRowDrop(event: DragEvent): void {
+  if (reordering.value === null) return;
+  event.preventDefault();
+  event.stopPropagation();
+  endReorder();
+}
+
 /**
  * Our own picker inside the shadow root: the native dialog still opens, but its
  * result lands in the queue instead of ending the overlay.
@@ -268,7 +348,6 @@ function onPicked(event: Event): void {
   input.value = '';
   if (picked.length > 0) {
     error.value = '';
-    notice.value = '';
     void addFiles(picked);
   }
 }
@@ -348,6 +427,69 @@ const cameraType = computed<EncodableType | null>(() => {
     ? type
     : null;
 });
+
+interface Source {
+  id: keyof typeof ICONS;
+  label: string;
+  title: string;
+  key: string;
+  run: () => void;
+}
+
+/** Paste, browse, camera and URL, in that order; a single-letter key is a shortcut. */
+const sources = computed<Source[]>(() => {
+  const list: Source[] = [
+    {
+      id: 'paste',
+      label: t('sourcePaste'),
+      title: t('actionPaste'),
+      key: PASTE_KEY,
+      run: () => void run(filesFromClipboardApi),
+    },
+    {
+      id: 'browse',
+      label: t('sourceBrowse'),
+      title: t('actionBrowse'),
+      key: t('keyBrowse'),
+      run: browse,
+    },
+  ];
+  if (cameraType.value) {
+    list.push({
+      id: 'camera',
+      label: t('sourceCamera'),
+      title: t('actionCamera'),
+      key: t('keyCamera'),
+      run: () => {
+        camera.value = true;
+      },
+    });
+  }
+  list.push({
+    id: 'url',
+    label: t('sourceUrl'),
+    title: t('urlPlaceholder'),
+    key: t('keyUrl'),
+    run: toggleUrl,
+  });
+  return list;
+});
+
+function openUrl(): void {
+  urlOpen.value = true;
+  void nextTick(() => urlField.value?.focus());
+}
+
+function closeUrl(): void {
+  urlOpen.value = false;
+  url.value = '';
+  root.value?.focus({ preventScroll: true });
+}
+
+function toggleUrl(): void {
+  if (urlOpen.value) closeUrl();
+  else openUrl();
+}
 
 function onShot(file: File): void {
   camera.value = false;
@@ -451,6 +593,10 @@ defineExpose({
       stopRename();
       return true;
     }
+    if (urlOpen.value) {
+      closeUrl();
+      return true;
+    }
     if (items.value.length > 0) {
       requestCancel();
       return true;
@@ -468,9 +614,31 @@ defineExpose({
     if (editor.value || camera.value) return;
     void confirm();
   },
+  /** True when `key` belongs to a source and ran it. */
+  shortcut: (key: string): boolean => {
+    const layered =
+      discarding.value ||
+      preview.value ||
+      editor.value ||
+      camera.value ||
+      editing.value !== null;
+    if (layered) return false;
+    const pressed = key.toLowerCase();
+    const source = sources.value.find(
+      (entry) => entry.key.length === 1 && entry.key.toLowerCase() === pressed,
+    );
+    if (!source || (busy.value && source.id !== 'browse')) return false;
+    source.run();
+    return true;
+  },
 });
 
-onMounted(() => root.value?.focus({ preventScroll: true }));
+onMounted(() => {
+  root.value?.focus({ preventScroll: true });
+  void getStripMetadata().then((enabled) => {
+    stripping.value = enabled;
+  });
+});
 </script>
 
 <template>
@@ -490,17 +658,25 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
 
     <div
       class="fio-card"
+      :class="{ 'is-dragging': dragging }"
       :inert="discarding"
       role="dialog"
       aria-modal="true"
-      :aria-label="t('overlayTitle')"
+      :aria-label="title"
     >
       <header class="fio-head">
         <Logo />
-        <h1 class="fio-title">{{ t('overlayTitle') }}</h1>
+        <h1 class="fio-title">{{ title }}</h1>
+        <span
+          v-if="acceptBadge"
+          class="fio-accept"
+          :title="t('acceptHint', accept)"
+        >
+          {{ acceptBadge }}
+        </span>
         <button
           type="button"
-          class="fio-icon-btn"
+          class="fio-close"
           :aria-label="t('actionCancel')"
           @click="requestCancel"
         >
@@ -509,46 +685,41 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
               d="m6 6 12 12M18 6 6 18"
               fill="none"
               stroke="currentColor"
-              stroke-width="1.8"
+              stroke-width="2.2"
               stroke-linecap="round"
             />
           </svg>
         </button>
       </header>
 
-      <div class="fio-zone" :class="{ 'is-dragging': dragging }">
-        <svg class="fio-zone-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M12 15.5V4m0 0L8.2 7.8M12 4l3.8 3.8M4 14v3.5A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        <p class="fio-zone-title">{{ t('dropTitle') }}</p>
-        <p class="fio-zone-hint">{{ pasteHint }}</p>
-        <div class="fio-zone-actions">
-          <button type="button" class="fio-btn fio-btn-ghost" @click="browse">
-            {{ t('actionBrowse') }}
-          </button>
+      <div :class="items.length ? 'fio-bar' : 'fio-zone'">
+        <template v-if="!items.length">
+          <span class="fio-zone-badge">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path :d="ICONS.upload" />
+            </svg>
+          </span>
+          <p class="fio-zone-title">{{ t('dropTitle') }}</p>
+          <p class="fio-zone-hint">{{ t('dropHint', PASTE_KEY) }}</p>
+        </template>
+        <div class="fio-sources">
           <button
+            v-for="source in sources"
+            :key="source.id"
             type="button"
-            class="fio-btn"
-            :disabled="busy"
-            @click="run(filesFromClipboardApi)"
+            class="fio-source"
+            :class="{ 'is-on': source.id === 'url' && urlOpen }"
+            :title="source.title"
+            :aria-keyshortcuts="source.key.length === 1 ? source.key : undefined"
+            :aria-expanded="source.id === 'url' ? urlOpen : undefined"
+            :disabled="busy && source.id !== 'browse'"
+            @click="source.run"
           >
-            {{ t('actionPaste') }}
-          </button>
-          <button
-            v-if="cameraType"
-            type="button"
-            class="fio-btn"
-            :disabled="busy"
-            @click="camera = true"
-          >
-            {{ t('actionCamera') }}
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path :d="ICONS[source.id]" />
+            </svg>
+            <span class="fio-source-label">{{ source.label }}</span>
+            <kbd class="fio-kbd">{{ source.key }}</kbd>
           </button>
         </div>
         <input
@@ -563,17 +734,23 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
         />
       </div>
 
-      <form class="fio-url" @submit.prevent="fetchUrl">
-        <input
-          v-model="url"
-          type="text"
-          class="fio-field"
-          :placeholder="t('urlPlaceholder')"
-          :disabled="busy"
-          spellcheck="false"
-          autocomplete="off"
-        />
-        <button type="submit" class="fio-btn" :disabled="!canFetch">
+      <form v-if="urlOpen" class="fio-url" @submit.prevent="fetchUrl">
+        <label class="fio-url-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path :d="ICONS.url" />
+          </svg>
+          <input
+            ref="urlField"
+            v-model="url"
+            type="text"
+            class="fio-url-input"
+            :placeholder="t('urlPlaceholder')"
+            :disabled="busy"
+            spellcheck="false"
+            autocomplete="off"
+          />
+        </label>
+        <button type="submit" class="fio-btn fio-btn-primary" :disabled="!canFetch">
           {{ t('actionFetch') }}
         </button>
       </form>
@@ -589,7 +766,6 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
         <span class="fio-progress-label">{{ progressLabel }}</span>
       </div>
 
-      <p v-if="accept" class="fio-meta">{{ t('acceptHint', accept) }}</p>
       <p v-if="error" class="fio-error">{{ error }}</p>
       <p v-if="notice" class="fio-notice">{{ notice }}</p>
 
@@ -605,9 +781,9 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
           :draggable="canReorder && editing !== item.id"
           :title="canReorder && editing !== item.id ? t('hintReorder') : undefined"
           @dragstart.stop="startReorder(item, $event)"
-          @dragenter.prevent.stop="reorderOver(item)"
-          @dragover.prevent.stop="onDragOver"
-          @drop.prevent.stop="endReorder"
+          @dragenter="onRowDragEnter(item, $event)"
+          @dragover="onRowDragOver"
+          @drop="onRowDrop"
           @dragend.stop="endReorder"
         >
           <button
@@ -736,7 +912,8 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
       </ul>
 
       <footer class="fio-foot">
-        <button type="button" class="fio-btn fio-btn-ghost" @click="requestCancel">
+        <span class="fio-summary">{{ summary }}</span>
+        <button type="button" class="fio-btn" @click="requestCancel">
           {{ t('actionCancel') }}
         </button>
         <button
@@ -749,6 +926,13 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
           {{ confirmLabel }}
         </button>
       </footer>
+
+      <div v-if="dragging" class="fio-drop-layer" aria-hidden="true">
+        <span class="fio-zone-badge">
+          <svg viewBox="0 0 24 24"><path :d="ICONS.upload" /></svg>
+        </span>
+        <span>{{ t('dropRelease') }}</span>
+      </div>
     </div>
 
     <Camera
@@ -785,6 +969,9 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
         aria-labelledby="fio-discard-title"
         aria-describedby="fio-discard-text"
       >
+        <span class="fio-zone-badge is-danger" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path :d="ICONS.discard" /></svg>
+        </span>
         <p id="fio-discard-title" class="fio-discard-title">
           {{ t('discardTitle') }}
         </p>
@@ -793,7 +980,7 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
           <button
             ref="keepButton"
             type="button"
-            class="fio-btn fio-btn-ghost"
+            class="fio-btn"
             @click="keepFiles"
           >
             {{ t('actionKeep') }}

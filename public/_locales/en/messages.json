@@ -20,11 +20,65 @@
   "overlayTitle": {
     "message": "Choose a file"
   },
+  "overlayTitleMany": {
+    "message": "Choose files"
+  },
   "dropTitle": {
-    "message": "Paste, drop or browse"
+    "message": "Drop, paste or pick a file"
   },
   "dropHint": {
-    "message": "Press $1 to insert an image from the clipboard"
+    "message": "$1 pastes an image or a link"
+  },
+  "dropRelease": {
+    "message": "Drop to add"
+  },
+  "sourcePaste": {
+    "message": "Paste"
+  },
+  "sourceBrowse": {
+    "message": "Browse"
+  },
+  "sourceCamera": {
+    "message": "Camera"
+  },
+  "sourceUrl": {
+    "message": "URL"
+  },
+  "keyBrowse": {
+    "message": "B",
+    "description": "Single-letter shortcut for sourceBrowse, ideally its first letter."
+  },
+  "keyCamera": {
+    "message": "C",
+    "description": "Single-letter shortcut for sourceCamera, ideally its first letter."
+  },
+  "keyUrl": {
+    "message": "U",
+    "description": "Single-letter shortcut for sourceUrl."
+  },
+  "summaryEmpty": {
+    "message": "Nothing selected"
+  },
+  "summaryOne": {
+    "message": "1 file · $1"
+  },
+  "summaryMany": {
+    "message": "$1 files · $2"
+  },
+  "summaryStripped": {
+    "message": "without metadata"
+  },
+  "acceptGroupImage": {
+    "message": "Images"
+  },
+  "acceptGroupVideo": {
+    "message": "Videos"
+  },
+  "acceptGroupAudio": {
+    "message": "Audio"
+  },
+  "acceptGroupText": {
+    "message": "Text"
   },
   "acceptHint": {
     "message": "This field accepts: $1"
@@ -86,8 +140,11 @@
   "hintReorder": {
     "message": "Drag to change the order"
   },
+  "noticeConvertedOne": {
+    "message": "1 file was converted into the accepted format."
+  },
   "noticeConverted": {
-    "message": "$1 file(s) were converted into the format this field takes."
+    "message": "$1 files were converted into the accepted format."
   },
   "itemConvertedHint": {
     "message": "Converted for this field"
@@ -146,8 +203,11 @@
   "errorAcceptMismatch": {
     "message": "This field only accepts: $1"
   },
+  "errorSomeRejectedOne": {
+    "message": "1 file was skipped because the field does not accept it."
+  },
   "errorSomeRejected": {
-    "message": "$1 file(s) were skipped because the field does not accept them."
+    "message": "$1 files were skipped because the field does not accept them."
   },
   "errorAssignFailed": {
     "message": "The file could not be handed over to the page."
@@ -227,8 +287,14 @@
   "optionsExported": {
     "message": "List exported."
   },
+  "optionsImportedNone": {
+    "message": "Every domain in the file was already listed."
+  },
+  "optionsImportedOne": {
+    "message": "1 new domain imported."
+  },
   "optionsImported": {
-    "message": "$1 new domain(s) imported."
+    "message": "$1 new domains imported."
   },
   "optionsImportFailed": {
     "message": "The file could not be read."

@@ -18,15 +18,16 @@
 
 .fio-root {
   --fio-bg: #ffffff;
-  --fio-fg: #1c1c1e;
-  --fio-muted: #6b6b70;
-  --fio-line: rgba(0, 0, 0, 0.12);
-  --fio-zone: rgba(120, 120, 128, 0.08);
-  --fio-accent: #0a6cff;
+  --fio-glass: rgba(246, 246, 248, 0.86);
+  --fio-fg: #1d1d1f;
+  --fio-muted: #6e6e73;
+  --fio-line: rgba(0, 0, 0, 0.1);
+  --fio-zone: rgba(120, 120, 128, 0.1);
+  --fio-accent: #0a84ff;
   --fio-accent-fg: #ffffff;
   --fio-danger: #d7263d;
   --fio-danger-fg: #ffffff;
-  --fio-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  --fio-shadow: 0 30px 80px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.12);
 
   position: fixed;
   inset: 0;
@@ -48,23 +49,24 @@
 
 @media (prefers-color-scheme: dark) {
   .fio-root {
-    --fio-bg: #1f2023;
-    --fio-fg: #f2f2f7;
-    --fio-muted: #a1a1aa;
-    --fio-line: rgba(255, 255, 255, 0.14);
-    --fio-zone: rgba(255, 255, 255, 0.06);
-    --fio-accent: #3b8cff;
-    --fio-danger: #ff6b81;
-    --fio-danger-fg: #1f2023;
-    --fio-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+    --fio-bg: #2c2c30;
+    --fio-glass: rgba(36, 36, 40, 0.86);
+    --fio-fg: #f5f5f7;
+    --fio-muted: #98989d;
+    --fio-line: rgba(255, 255, 255, 0.12);
+    --fio-zone: rgba(255, 255, 255, 0.07);
+    --fio-accent: #0a84ff;
+    --fio-danger: #ff453a;
+    --fio-danger-fg: #ffffff;
+    --fio-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.14);
   }
 }
 
 .fio-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(2px);
+  background: rgba(20, 20, 28, 0.38);
+  backdrop-filter: blur(6px) saturate(1.2);
 }
 
 .fio-card {
@@ -73,14 +75,20 @@
   flex-direction: column;
   gap: 12px;
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
   max-height: 100%;
   overflow-y: auto;
-  padding: 18px;
-  border-radius: 16px;
-  background: var(--fio-bg);
+  padding: 16px 18px 0;
+  border-radius: 20px;
+  background: var(--fio-glass);
+  backdrop-filter: blur(30px) saturate(1.8);
   box-shadow: var(--fio-shadow);
+  transition: box-shadow 120ms ease;
   animation: fio-in 140ms ease-out;
+}
+
+.fio-card.is-dragging {
+  box-shadow: 0 0 0 3px var(--fio-accent), var(--fio-shadow);
 }
 
 @keyframes fio-in {
@@ -96,119 +104,310 @@
   }
 }
 
+/* ---------- header ---------- */
+
 .fio-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .fio-mark {
   width: 22px;
   height: 22px;
   flex: none;
-  color: var(--fio-accent);
 }
 
 .fio-title {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
   font-size: 15px;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.fio-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
+.fio-accept {
   flex: none;
-  border-radius: 8px;
+  max-width: 45%;
+  overflow: hidden;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--fio-zone);
+  color: var(--fio-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.fio-close {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--fio-zone);
   color: var(--fio-muted);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition: color 120ms ease, filter 120ms ease;
 }
 
-.fio-icon-btn svg {
-  width: 16px;
-  height: 16px;
+.fio-close svg {
+  width: 12px;
+  height: 12px;
 }
 
-.fio-icon-btn:hover {
-  background: var(--fio-zone);
+.fio-close:hover {
   color: var(--fio-fg);
 }
 
-.fio-icon-btn.is-on,
-.fio-icon-btn.is-on:hover {
-  color: var(--fio-accent);
-  background: color-mix(in srgb, var(--fio-accent) 12%, transparent);
+.fio-close:focus-visible {
+  outline: 2px solid var(--fio-accent);
+  outline-offset: 2px;
 }
 
+/* ---------- sources ---------- */
+
 .fio-zone {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 22px 16px;
-  border: 1.5px dashed var(--fio-line);
-  border-radius: 12px;
-  background: var(--fio-zone);
+  gap: 2px;
+  padding: 24px 18px 18px;
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      120% 100% at 50% 0%,
+      color-mix(in srgb, var(--fio-accent) 10%, transparent),
+      transparent 70%
+    ),
+    var(--fio-zone);
+  outline: 1.5px dashed color-mix(in srgb, var(--fio-accent) 35%, transparent);
+  outline-offset: -1.5px;
   text-align: center;
-  transition: border-color 120ms ease, background 120ms ease;
 }
 
-.fio-zone.is-dragging {
-  border-color: var(--fio-accent);
-  background: color-mix(in srgb, var(--fio-accent) 12%, transparent);
+.fio-zone-badge {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 10px;
+  border-radius: 13px;
+  background: linear-gradient(180deg, #3da1ff, #0a74ff);
+  box-shadow: 0 6px 16px rgba(10, 132, 255, 0.35);
+  color: #ffffff;
 }
+
+.fio-zone-badge svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fio-zone-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.fio-zone-hint {
+  color: var(--fio-muted);
+  font-size: 13px;
+}
+
+.fio-sources {
+  display: flex;
+  gap: 8px;
+}
+
+.fio-zone .fio-sources {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.fio-source {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 12px;
+  background: var(--fio-bg);
+  box-shadow: 0 0 0 0.5px var(--fio-line), 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: box-shadow 120ms ease, background 120ms ease;
+}
+
+.fio-source svg {
+  flex: none;
+  fill: none;
+  stroke: var(--fio-accent);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fio-source:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fio-accent) 6%, var(--fio-bg));
+}
+
+.fio-source:focus-visible {
+  outline: 2px solid var(--fio-accent);
+  outline-offset: 2px;
+}
+
+.fio-source.is-on {
+  box-shadow: 0 0 0 1.5px var(--fio-accent);
+}
+
+.fio-source:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.fio-zone .fio-source {
+  flex-direction: column;
+  min-width: 0;
+  padding: 12px 6px 10px;
+  font-size: 12.5px;
+}
+
+.fio-zone .fio-source svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fio-source-label {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
+.fio-bar {
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--fio-zone);
+}
+
+.fio-bar .fio-sources {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fio-bar .fio-source {
+  height: 30px;
+  padding: 0 7px 0 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
+.fio-bar .fio-source svg {
+  width: 15px;
+  height: 15px;
+}
+
+.fio-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--fio-zone);
+  color: var(--fio-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.fio-hidden {
+  display: none;
+}
+
+/* ---------- URL ---------- */
 
 .fio-url {
   display: flex;
   gap: 8px;
 }
 
-.fio-field {
+.fio-url-field {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--fio-bg);
+  box-shadow: 0 0 0 1px var(--fio-line);
+  cursor: text;
+  transition: box-shadow 120ms ease;
+}
+
+.fio-url-field:focus-within {
+  box-shadow:
+    0 0 0 2px var(--fio-accent),
+    0 0 0 5px color-mix(in srgb, var(--fio-accent) 20%, transparent);
+}
+
+.fio-url-field svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  fill: none;
+  stroke: var(--fio-muted);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fio-url-input {
   flex: 1;
   min-width: 0;
-  padding: 7px 12px;
-  border-radius: 9px;
-  background: var(--fio-zone);
-  box-shadow: inset 0 0 0 1px var(--fio-line);
   font-size: 13px;
+  outline: none;
 }
 
-.fio-field:focus-visible {
-  outline: 2px solid var(--fio-accent);
-  outline-offset: 1px;
-}
-
-.fio-field::placeholder {
+.fio-url-input::placeholder {
   color: var(--fio-muted);
 }
 
-.fio-field:disabled {
-  opacity: 0.5;
+.fio-url .fio-btn {
+  height: 38px;
 }
+
+/* ---------- status ---------- */
 
 .fio-progress {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .fio-progress-track {
   position: relative;
   flex: 1;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--fio-line);
+  height: 4px;
+  border-radius: 2px;
+  background: var(--fio-zone);
   overflow: hidden;
 }
 
 .fio-progress-bar {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 2px;
   background: var(--fio-accent);
   transition: width 120ms linear;
 }
@@ -234,35 +433,24 @@
   white-space: nowrap;
 }
 
-.fio-zone-icon {
-  width: 30px;
-  height: 30px;
-  color: var(--fio-muted);
-}
-
-.fio-zone-title {
-  font-weight: 600;
-}
-
-.fio-zone-hint {
-  color: var(--fio-muted);
+.fio-error {
+  color: var(--fio-danger);
   font-size: 13px;
 }
 
-.fio-hidden {
-  display: none;
+.fio-notice {
+  color: var(--fio-accent);
+  font-size: 13px;
 }
 
-.fio-zone-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-}
+/* ---------- buttons ---------- */
 
 .fio-btn {
-  padding: 7px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 16px;
   border-radius: 9px;
   background: var(--fio-zone);
   font-size: 13px;
@@ -279,6 +467,7 @@
 .fio-btn:disabled {
   opacity: 0.45;
   cursor: default;
+  box-shadow: none;
 }
 
 .fio-btn:focus-visible,
@@ -289,12 +478,8 @@
 
 .fio-btn-primary {
   background: var(--fio-accent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--fio-accent) 35%, transparent);
   color: var(--fio-accent-fg);
-}
-
-.fio-btn-ghost {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--fio-line);
 }
 
 .fio-btn-danger {
@@ -302,30 +487,46 @@
   color: var(--fio-danger-fg);
 }
 
-.fio-meta {
+.fio-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 8px;
   color: var(--fio-muted);
-  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, opacity 120ms ease;
 }
 
-.fio-error {
-  color: var(--fio-danger);
-  font-size: 13px;
+.fio-icon-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
-.fio-notice {
+.fio-icon-btn:hover {
+  background: var(--fio-zone);
+  color: var(--fio-fg);
+}
+
+.fio-icon-btn.is-on,
+.fio-icon-btn.is-on:hover {
   color: var(--fio-accent);
-  font-size: 13px;
+  background: color-mix(in srgb, var(--fio-accent) 12%, transparent);
 }
+
+/* ---------- file list ---------- */
 
 .fio-tag {
   display: inline-block;
   margin-left: 6px;
   padding: 0 6px;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--fio-accent) 18%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--fio-accent) 14%, transparent);
   color: var(--fio-accent);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 600;
   letter-spacing: 0.02em;
   vertical-align: 1px;
 }
@@ -333,18 +534,42 @@
 .fio-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 210px;
+  gap: 2px;
+  max-height: 300px;
+  margin: 0 -8px;
   overflow-y: auto;
 }
 
 .fio-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px;
-  border-radius: 10px;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 12px;
+  transition: background 120ms ease;
+}
+
+.fio-item:hover,
+.fio-item:focus-within {
   background: var(--fio-zone);
+}
+
+/* Row tools stay out of sight until the row is used; a switched-on one
+   stays visible so its state is never hidden. */
+.fio-item .fio-icon-btn {
+  opacity: 0;
+}
+
+.fio-item:hover .fio-icon-btn,
+.fio-item:focus-within .fio-icon-btn,
+.fio-item .fio-icon-btn.is-on {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .fio-item .fio-icon-btn {
+    opacity: 1;
+  }
 }
 
 .fio-item.is-movable {
@@ -358,7 +583,7 @@
 
 .fio-thumb-btn {
   flex: none;
-  border-radius: 8px;
+  border-radius: 9px;
   cursor: pointer;
   transition: transform 120ms ease;
 }
@@ -377,11 +602,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   flex: none;
-  border-radius: 8px;
-  background: var(--fio-line);
+  border-radius: 9px;
+  background: var(--fio-zone);
+  box-shadow: inset 0 0 0 0.5px var(--fio-line);
   overflow: hidden;
 }
 
@@ -415,6 +641,8 @@
   padding: 1px 4px;
   margin-left: -4px;
   border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
@@ -430,11 +658,26 @@
   outline-offset: 1px;
 }
 
+.fio-field {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: var(--fio-bg);
+  box-shadow: inset 0 0 0 1px var(--fio-line);
+  font-size: 13px;
+}
+
+.fio-field:focus-visible {
+  outline: 2px solid var(--fio-accent);
+  outline-offset: 1px;
+}
+
 .fio-item-field {
   flex: none;
   width: 100%;
   padding: 2px 6px;
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .fio-item-size {
@@ -442,12 +685,50 @@
   font-size: 12px;
 }
 
+/* ---------- footer ---------- */
+
 .fio-foot {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
   gap: 8px;
-  margin-top: 2px;
+  margin: 2px -18px 0;
+  padding: 14px 18px 16px;
+  border-top: 0.5px solid var(--fio-line);
 }
+
+.fio-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fio-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- drag feedback ---------- */
+
+.fio-drop-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--fio-accent) 10%, var(--fio-glass));
+  backdrop-filter: blur(6px);
+  outline: 2px dashed var(--fio-accent);
+  outline-offset: -10px;
+  color: var(--fio-accent);
+  font-size: 15px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* ---------- layers ---------- */
 
 .fio-camera {
   position: absolute;
@@ -475,9 +756,10 @@
 .fio-camera-bar {
   display: flex;
   gap: 8px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--fio-bg);
+  padding: 10px;
+  border-radius: 16px;
+  background: var(--fio-glass);
+  backdrop-filter: blur(30px) saturate(1.8);
   box-shadow: var(--fio-shadow);
 }
 
@@ -493,12 +775,62 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 16px;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.86);
-  backdrop-filter: blur(6px);
+  background: rgba(10, 10, 14, 0.88);
+  backdrop-filter: blur(10px);
   animation: fio-in 120ms ease-out;
+}
+
+/* Both bars sit above the crop mask, which paints as a huge shadow. */
+.fio-editor-top,
+.fio-editor-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 560px;
+  border-radius: 16px;
+  background: var(--fio-glass);
+  backdrop-filter: blur(30px) saturate(1.8);
+  box-shadow: var(--fio-shadow);
+}
+
+.fio-editor-top {
+  gap: 8px;
+  padding: 10px 10px 10px 16px;
+}
+
+.fio-editor-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.fio-editor-name,
+.fio-editor-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fio-editor-name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.fio-editor-meta {
+  color: var(--fio-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fio-editor-stage {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
 }
 
 .fio-editor-frame {
@@ -510,80 +842,120 @@
 
 .fio-editor-canvas {
   display: block;
-  border-radius: 8px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
 .fio-crop {
   position: absolute;
   box-sizing: border-box;
-  border: 1px solid #ffffff;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
   cursor: move;
 }
 
+/* Rule of thirds, faint at rest and clear while dragging. */
+.fio-crop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to right,
+      transparent calc(100% / 3 - 0.5px),
+      var(--fio-grid) calc(100% / 3 - 0.5px) calc(100% / 3 + 0.5px),
+      transparent calc(100% / 3 + 0.5px) calc(200% / 3 - 0.5px),
+      var(--fio-grid) calc(200% / 3 - 0.5px) calc(200% / 3 + 0.5px),
+      transparent calc(200% / 3 + 0.5px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(100% / 3 - 0.5px),
+      var(--fio-grid) calc(100% / 3 - 0.5px) calc(100% / 3 + 0.5px),
+      transparent calc(100% / 3 + 0.5px) calc(200% / 3 - 0.5px),
+      var(--fio-grid) calc(200% / 3 - 0.5px) calc(200% / 3 + 0.5px),
+      transparent calc(200% / 3 + 0.5px)
+    );
+  pointer-events: none;
+  --fio-grid: rgba(255, 255, 255, 0.22);
+  transition: opacity 120ms ease;
+}
+
+.fio-crop.is-active::before {
+  --fio-grid: rgba(255, 255, 255, 0.55);
+}
+
+/* Corner brackets like in Photos; the element is the grab area. */
 .fio-crop-handle {
   position: absolute;
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  width: 22px;
+  height: 22px;
+  border: 0 solid #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
 .fio-crop-handle.is-nw {
-  top: -7px;
-  left: -7px;
+  top: -4px;
+  left: -4px;
+  border-width: 4px 0 0 4px;
+  border-top-left-radius: 4px;
   cursor: nwse-resize;
 }
 
 .fio-crop-handle.is-ne {
-  top: -7px;
-  right: -7px;
+  top: -4px;
+  right: -4px;
+  border-width: 4px 4px 0 0;
+  border-top-right-radius: 4px;
   cursor: nesw-resize;
 }
 
 .fio-crop-handle.is-sw {
-  bottom: -7px;
-  left: -7px;
+  bottom: -4px;
+  left: -4px;
+  border-width: 0 0 4px 4px;
+  border-bottom-left-radius: 4px;
   cursor: nesw-resize;
 }
 
 .fio-crop-handle.is-se {
-  bottom: -7px;
-  right: -7px;
+  bottom: -4px;
+  right: -4px;
+  border-width: 0 4px 4px 0;
+  border-bottom-right-radius: 4px;
   cursor: nwse-resize;
 }
 
 .fio-editor-bar {
-  /* Stays above the crop mask, which paints as a huge shadow. */
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  max-width: 560px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: var(--fio-bg);
-  box-shadow: var(--fio-shadow);
+  gap: 4px;
+  padding: 8px 10px;
 }
 
-.fio-editor-tools {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
+.fio-editor-bar .fio-icon-btn {
+  width: 34px;
+  height: 34px;
+  color: var(--fio-fg);
+}
+
+.fio-editor-bar .fio-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fio-editor-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 6px;
+  background: var(--fio-line);
 }
 
 .fio-editor-scale {
   display: flex;
   flex: 1;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  min-width: 0;
   font-size: 13px;
+  font-weight: 500;
 }
 
 .fio-range {
@@ -594,27 +966,21 @@
 }
 
 .fio-editor-value {
-  min-width: 46px;
+  min-width: 42px;
   color: var(--fio-muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.fio-editor-meta {
-  width: 100%;
-  overflow: hidden;
-  color: var(--fio-muted);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.fio-btn-plain {
+  background: transparent;
+  color: var(--fio-accent);
 }
 
-.fio-editor-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  width: 100%;
+.fio-btn-plain:hover:not(:disabled) {
+  background: var(--fio-zone);
+  filter: none;
 }
 
 .fio-editor-failed {
@@ -660,21 +1026,37 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(20, 20, 28, 0.25);
+  backdrop-filter: blur(2px);
 }
 
 .fio-discard-card {
   animation: fio-in 120ms ease-out;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 2px;
   width: 100%;
-  max-width: 320px;
-  padding: 18px;
-  border-radius: 14px;
-  background: var(--fio-bg);
+  max-width: 300px;
+  padding: 22px 18px 18px;
+  border-radius: 20px;
+  background: var(--fio-glass);
+  backdrop-filter: blur(30px) saturate(1.8);
   box-shadow: var(--fio-shadow);
   text-align: center;
+}
+
+.fio-zone-badge.is-danger {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ff6b6b, #e5383b);
+  box-shadow: 0 6px 16px rgba(229, 56, 59, 0.35);
+}
+
+.fio-zone-badge.is-danger svg {
+  width: 22px;
+  height: 22px;
 }
 
 .fio-discard-title {
@@ -690,7 +1072,8 @@
 .fio-discard-actions {
   display: flex;
   gap: 8px;
-  margin-top: 10px;
+  width: 100%;
+  margin-top: 16px;
 }
 
 .fio-discard-actions .fio-btn {

@@ -7,6 +7,8 @@ import {
   imageUrlFromHtml,
   isDownloadableUrl,
   matchesAccept,
+  acceptLabels,
+  linkFromText,
   sanitizeFileName,
   splitFileName,
 } from '../lib/files';
@@ -90,6 +92,36 @@ describe('clipboard html', () => {
     expect(isDownloadableUrl(' https://x.test/a.png ')).toBe(true);
     expect(isDownloadableUrl('data:image/png;base64,AA')).toBe(true);
     expect(isDownloadableUrl('blob:https://x.test/uuid')).toBe(false);
+  });
+});
+
+describe('linkFromText', () => {
+  it('takes a single link and nothing else', () => {
+    expect(linkFromText('  https://example.com/a.png\n')).toBe(
+      'https://example.com/a.png',
+    );
+    expect(linkFromText('data:image/png;base64,AAAA')).toBe(
+      'data:image/png;base64,AAAA',
+    );
+    expect(linkFromText('see https://example.com/a.png')).toBeNull();
+    expect(linkFromText('file:///etc/passwd')).toBeNull();
+    expect(linkFromText('hello')).toBeNull();
+  });
+});
+
+describe('acceptLabels', () => {
+  it('keeps groups and shortens types, without duplicates', () => {
+    expect(acceptLabels('image/*')).toEqual(['image/*']);
+    expect(acceptLabels('image/jpeg,.jpg, .JPEG,image/png')).toEqual([
+      'JPG',
+      'PNG',
+    ]);
+    expect(acceptLabels('.pdf,application/pdf,image/svg+xml')).toEqual([
+      'PDF',
+      'SVG',
+    ]);
+    expect(acceptLabels('*/*')).toEqual([]);
+    expect(acceptLabels('')).toEqual([]);
   });
 });
 

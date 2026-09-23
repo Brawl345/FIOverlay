@@ -7,7 +7,8 @@ const emit = defineEmits<{ measured: [dimensions: Dimensions] }>();
 
 const canvas = ref<HTMLCanvasElement>();
 const rendered = ref(false);
-const SIZE = 56;
+/** Matches the `.fio-thumb` box. */
+const SIZE = 44;
 
 // createImageBitmap takes the Blob directly, so no blob: URL has to survive the
 // page's img-src policy. This first decode is also what yields the pixel size.

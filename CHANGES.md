@@ -1,7 +1,10 @@
 # Changelog
 
-## v2.2.1
+## v3.0.0
 
+- New design with keyboard shortcuts
+- URLs can be pasted
+- Drag & Drop over whole page while modal is open
 - New filesize is shown while editing images
 - Cancelling the modal while files are loaded shows a confirmation prompt
 - Various bugfixes

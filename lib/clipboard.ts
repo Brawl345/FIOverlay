@@ -5,6 +5,7 @@ import {
   extensionForMime,
   generatedName,
   imageUrlFromHtml,
+  linkFromText,
   sanitizeFileName,
 } from './files';
 import {
@@ -129,8 +130,8 @@ function readString(item: DataTransferItem): Promise<string> {
 
 /**
  * Files first, then an image referenced by the HTML flavour - which is what a
- * browser puts on the clipboard for "copy image". Plain text is never a file
- * and belongs in the URL field instead.
+ * browser puts on the clipboard for "copy image" - then a plain-text link. The
+ * page can write all of these, so every link is loaded as `page`.
  */
 export async function filesFromDataTransfer(
   transfer: DataTransfer | null,
@@ -142,15 +143,22 @@ export async function filesFromDataTransfer(
   if (direct.length > 0) return { files: direct };
 
   const items = Array.from(transfer.items);
-  const html = items.find(
-    (item) => item.kind === 'string' && item.type === 'text/html',
-  );
+  const find = (type: string) =>
+    items.find((item) => item.kind === 'string' && item.type === type);
+
+  const html = find('text/html');
   if (html) {
     const url = imageUrlFromHtml(await readString(html));
     if (url) return downloadUrl(url, onProgress, 'page');
   }
 
-  // Pasting text is a no-op, not a failure: the URL field is right there.
+  const text = find('text/plain');
+  if (text) {
+    const url = linkFromText(await readString(text));
+    if (url) return downloadUrl(url, onProgress, 'page');
+  }
+
+  // Other text is a no-op, not a failure.
   return { files: [] };
 }
 
@@ -185,6 +193,12 @@ export async function filesFromClipboardApi(
     const url = imageUrlFromHtml(
       await (await item.getType('text/html')).text(),
     );
+    if (url) return downloadUrl(url, onProgress, 'page');
+  }
+
+  for (const item of items) {
+    if (!item.types.includes('text/plain')) continue;
+    const url = linkFromText(await (await item.getType('text/plain')).text());
     if (url) return downloadUrl(url, onProgress, 'page');
   }
 

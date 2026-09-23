@@ -6,9 +6,10 @@ Works in Chrome and Firefox. Completely AI-generated. I don't take feature reque
 
 ## What you can do
 
-- Paste files and copied images with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>V</kbd>.
-- Drag files into the picker.
+- Paste files, copied images and image links with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>V</kbd>.
+- Drop files anywhere on the page while the picker is open.
 - Add a file from a URL.
+- Open each source with a single key, shown next to it (in English: <kbd>B</kbd>rowse, <kbd>C</kbd>amera, <kbd>U</kbd>RL).
 - Take a photo with your camera when the field asks for one.
 - Choose files from your device.
 - Check image previews, file sizes, and dimensions before uploading.
@@ -57,10 +58,23 @@ Run `npm run release <version>` to build and package both browser versions, crea
 
 ## Screenshots
 
-![FIOverlay file picker](screenshot-01.png)
+Click an image for the full size.
 
-![FIOverlay with a selected file](screenshot-02.png)
-
-![FIOverlay image preview](screenshot-03.png)
-
-![FIOverlay settings](screenshot-04.png)
+<table>
+  <tr>
+    <td width="50%"><a href="screenshots/picker.png"><img src="screenshots/picker.png" alt="The empty picker with its four sources"></a><br><sub>Paste, browse, camera or URL, each with its own key</sub></td>
+    <td width="50%"><a href="screenshots/files.png"><img src="screenshots/files.png" alt="Three files in the list, two of them converted to JPG"></a><br><sub>Files are converted when the field wants another format</sub></td>
+  </tr>
+  <tr>
+    <td><a href="screenshots/url.png"><img src="screenshots/url.png" alt="An image downloading from a URL with a progress bar"></a><br><sub>Download a file from a URL</sub></td>
+    <td><a href="screenshots/editor.png"><img src="screenshots/editor.png" alt="The image editor with a crop frame"></a><br><sub>Crop, rotate and scale, with the file size shown live</sub></td>
+  </tr>
+  <tr>
+    <td><a href="screenshots/preview.png"><img src="screenshots/preview.png" alt="The large image preview"></a><br><sub>Large preview</sub></td>
+    <td><a href="screenshots/discard.png"><img src="screenshots/discard.png" alt="The question whether to discard the selection"></a><br><sub>Closing asks before your files are thrown away</sub></td>
+  </tr>
+  <tr>
+    <td><a href="screenshots/dark.png"><img src="screenshots/dark.png" alt="The picker in dark mode"></a><br><sub>Dark mode</sub></td>
+    <td><a href="screenshots/options.png"><img src="screenshots/options.png" alt="The settings page"></a><br><sub>Settings</sub></td>
+  </tr>
+</table>
