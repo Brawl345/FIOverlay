@@ -71,6 +71,8 @@ const dragDepth = ref(0);
 const editing = ref<number | null>(null);
 const draft = ref('');
 const reordering = ref<number | null>(null);
+const discarding = ref(false);
+const keepButton = ref<HTMLButtonElement>();
 let nextId = 0;
 
 const accept = computed(() => props.accept.trim());
@@ -82,6 +84,11 @@ const canConfirm = computed(() => items.value.length > 0 && !busy.value);
 const canFetch = computed(() => !busy.value && url.value.trim().length > 0);
 const pasteHint = computed(() =>
   t('dropHint', /mac/i.test(navigator.userAgent) ? '⌘V' : 'Ctrl+V'),
+);
+const discardText = computed(() =>
+  items.value.length > 1
+    ? t('discardTextMany', String(items.value.length))
+    : t('discardTextOne'),
 );
 const confirmLabel = computed(() =>
   items.value.length > 1
@@ -399,6 +406,22 @@ async function confirm(): Promise<void> {
   }
 }
 
+/** An empty overlay closes right away; picked files are only dropped on request. */
+function requestCancel(): void {
+  if (items.value.length === 0) {
+    emit('cancel');
+    return;
+  }
+  discarding.value = true;
+  // Enter or Space on the focused default keeps the files.
+  void nextTick(() => keepButton.value?.focus());
+}
+
+function keepFiles(): void {
+  discarding.value = false;
+  root.value?.focus({ preventScroll: true });
+}
+
 // Fed by the capture listeners that were installed at document_start.
 defineExpose({
   pasteFrom: (transfer: DataTransfer | null) =>
@@ -408,6 +431,10 @@ defineExpose({
   },
   /** True when the overlay handled Escape itself. */
   dismiss: (): boolean => {
+    if (discarding.value) {
+      keepFiles();
+      return true;
+    }
     if (preview.value) {
       preview.value = null;
       return true;
@@ -424,9 +451,14 @@ defineExpose({
       stopRename();
       return true;
     }
+    if (items.value.length > 0) {
+      requestCancel();
+      return true;
+    }
     return false;
   },
   submit: (): void => {
+    if (discarding.value) return;
     if (preview.value) {
       preview.value = null;
       return;
@@ -454,10 +486,11 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
     @dragover.prevent.stop="onDragOver"
     @drop.prevent.stop="onDrop"
   >
-    <div class="fio-backdrop" @click="emit('cancel')" />
+    <div class="fio-backdrop" @click="requestCancel" />
 
     <div
       class="fio-card"
+      :inert="discarding"
       role="dialog"
       aria-modal="true"
       :aria-label="t('overlayTitle')"
@@ -469,7 +502,7 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
           type="button"
           class="fio-icon-btn"
           :aria-label="t('actionCancel')"
-          @click="emit('cancel')"
+          @click="requestCancel"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -703,7 +736,7 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
       </ul>
 
       <footer class="fio-foot">
-        <button type="button" class="fio-btn fio-btn-ghost" @click="emit('cancel')">
+        <button type="button" class="fio-btn fio-btn-ghost" @click="requestCancel">
           {{ t('actionCancel') }}
         </button>
         <button
@@ -743,5 +776,37 @@ onMounted(() => root.value?.focus({ preventScroll: true }));
       :dimensions="preview.dimensions"
       @close="preview = null"
     />
+
+    <div v-if="discarding" class="fio-discard" @click.self="keepFiles">
+      <div
+        class="fio-discard-card"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="fio-discard-title"
+        aria-describedby="fio-discard-text"
+      >
+        <p id="fio-discard-title" class="fio-discard-title">
+          {{ t('discardTitle') }}
+        </p>
+        <p id="fio-discard-text" class="fio-discard-text">{{ discardText }}</p>
+        <div class="fio-discard-actions">
+          <button
+            ref="keepButton"
+            type="button"
+            class="fio-btn fio-btn-ghost"
+            @click="keepFiles"
+          >
+            {{ t('actionKeep') }}
+          </button>
+          <button
+            type="button"
+            class="fio-btn fio-btn-danger"
+            @click="emit('cancel')"
+          >
+            {{ t('actionDiscard') }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

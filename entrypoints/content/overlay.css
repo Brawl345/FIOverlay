@@ -25,6 +25,7 @@
   --fio-accent: #0a6cff;
   --fio-accent-fg: #ffffff;
   --fio-danger: #d7263d;
+  --fio-danger-fg: #ffffff;
   --fio-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
 
   position: fixed;
@@ -54,6 +55,7 @@
     --fio-zone: rgba(255, 255, 255, 0.06);
     --fio-accent: #3b8cff;
     --fio-danger: #ff6b81;
+    --fio-danger-fg: #1f2023;
     --fio-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
   }
 }
@@ -293,6 +295,11 @@
 .fio-btn-ghost {
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--fio-line);
+}
+
+.fio-btn-danger {
+  background: var(--fio-danger);
+  color: var(--fio-danger-fg);
 }
 
 .fio-meta {
@@ -643,6 +650,57 @@
 
 .fio-preview-canvas.is-ready {
   visibility: visible;
+}
+
+.fio-discard {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.fio-discard-card {
+  animation: fio-in 120ms ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 320px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--fio-bg);
+  box-shadow: var(--fio-shadow);
+  text-align: center;
+}
+
+.fio-discard-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.fio-discard-text {
+  color: var(--fio-muted);
+  font-size: 13px;
+}
+
+.fio-discard-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fio-discard-actions .fio-btn {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fio-discard-card {
+    animation: none;
+  }
 }
 
 .fio-preview-meta,

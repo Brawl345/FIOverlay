@@ -103,7 +103,10 @@ export function openOverlay(
     style(host, HOST_STYLES);
     frame.append(host);
 
-    const shadow = host.attachShadow({ mode: 'closed' });
+    // The e2e build keeps the root open so browser automation can reach it.
+    const shadow = host.attachShadow({
+      mode: import.meta.env.MODE === 'e2e' ? 'open' : 'closed',
+    });
     adopt(shadow);
     const container = document.createElement('div');
     shadow.append(container);

@@ -1,105 +1,37 @@
 # LLM Guidance
 
-This file provides guidance to LLMs when working with code in this repository.
-
-## Overview
-
-Chrome/Firefox web extension that replaces native file pickers with an overlay accepting clipboard
-images. TypeScript + Vue 3 (`<script setup>`), built with [WXT](https://wxt.dev) (Vite), linted and
-formatted with Biome, tested with Vitest. Manifest V3 on both browsers.
-
-## Architecture
-
-Framework-free logic lives in `lib/`, UI in `entrypoints/`:
-
-- **`lib/`**: `domains.ts` (synced disabled-domain list, hostname matching, import/export),
-  `clipboard.ts` (DataTransfer and Clipboard API → `File[]`, port-based downloads), `files.ts`
-  (`accept` matching, data URLs, names, sizes), `convert.ts` (canvas encoding, the output type an
-  `accept` leaves possible), `metadata.ts` (EXIF/XMP/IPTC removal on the byte level),
-  `rehash.ts` (invisible pixel change plus re-encode, for a different file hash),
-  `network.ts` (local-network hosts for page-sourced downloads), `settings.ts` (synced switches),
-  `picker-hook.ts` (page-world `click()`/`showPicker()` patch), `base64.ts`, `messages.ts`,
-  `i18n.ts`.
-- **`entrypoints/content/`**: `index.ts` (capture-phase click interception at `document_start`),
-  `early-events.ts` (paste/keydown capture registered before page scripts), `overlay.ts`
-  (`<dialog>` + closed shadow root, Vue mount, `assignFiles`), `canvas.ts` (bitmap decode/draw),
-  `Overlay.vue`, `Editor.vue` (crop, rotation, scale), `Camera.vue` (`getUserMedia` still image),
-  `Thumbnail.vue`, `Preview.vue`, `Logo.vue`, `overlay.css`.
-- **`entrypoints/picker.content.ts`**: `world: 'MAIN'` script installing `picker-hook.ts`, which
-  announces a picker the isolated world would not see otherwise.
-- **`entrypoints/background.ts`**: per-tab icon state, domain toggle on `action.onClicked`, chunked
-  streaming downloads over a `runtime.Port`.
-- **`entrypoints/options/`**: domain list, metadata switch, JSON export/import.
+Chrome/Firefox MV3 extension that replaces native file pickers with an overlay accepting clipboard
+images. TypeScript + Vue 3 (`<script setup>`), [WXT](https://wxt.dev), Biome, Vitest. Framework-free
+logic lives in `lib/` (unit tested), UI in `entrypoints/`.
 
 ## Invariants
 
-- The content script must stay side-effect free until a file input is actually clicked; the overlay
-  is created on demand and removed on close.
-- The overlay's styling never relies on the page: styles are inlined via `overlay.css?inline` into a
-  constructable stylesheet, host properties are set through CSSOM with `!important`. Content-script
-  UI therefore carries **no** SFC `<style>` blocks — the shadow root already isolates it.
-- Anything that could hit the page's CSP (image loads, network requests) is routed around it:
-  `createImageBitmap` for previews, background `fetch` for downloads. The `<img>` + object URL path
-  in `canvas.ts` is the one exception, reserved for what that decoder rejects (SVG); it may be
-  refused by `img-src` and then falls back to a placeholder.
-- A detached input's events reach nothing outside itself, so the page-world hook parks it in the
-  document only for the duration of the announcement and puts it back at its old position; the page
-  keeps the element it created, and both worlds work on that same element.
-- `overlayOpen` suppresses re-entrant `input.click()` calls from page handlers, and an Alt+click
-  releases exactly one click to the browser - the time window only exists because a label or upload
-  button forwards a synthetic click that may drop the modifier.
-- The page's own input is never clicked; the overlay carries its own file input inside the shadow
-  root, so the native dialog feeds the queue instead of ending the overlay.
-- A file's bytes only change where the user asked for it: the editor writes crop, rotation and
-  scale back through a canvas, and an image the field's `accept` refuses is re-encoded into a type
-  it takes. A rename, and the clock button that puts the current time into `lastModified`,
-  re-wrap the same blob in a fresh `File`. Everything else - thumbnails, the
-  large preview - is display only, and `createImageBitmap` is never given both `resizeWidth` and
-  `resizeHeight` unless they already match the natural aspect ratio, because it does not preserve
-  it on its own.
-- The camera button only appears on an input that carries `capture` and whose `accept` takes a
-  still image. `getUserMedia` runs in the page's origin, so a page on plain HTTP or with a
-  restrictive permissions policy gets the error message instead of a stream.
-- The hash button re-encodes the image with one 8×8 block moved by a single step. A whole block
-  shifts the DC coefficient far enough that a JPEG round trip keeps the change, where a single
-  pixel would be quantized away. It runs after metadata removal, so nothing can take the change
-  with it, and it is offered only for the types a canvas can write.
-- Metadata removal runs on the raw bytes when the selection is confirmed, never through a canvas:
-  a JPEG keeps its APP0, its ICC profile in APP2 and the Adobe colour transform in APP14, a PNG
-  its `iCCP`, and the image data is copied through untouched. A file of another type, or one with
-  nothing to remove, is passed on as it is.
-- An edited item enters the list under a fresh id: `Thumbnail` and the pixel size are read once on
-  mount, so the row has to be remounted to show the new bytes.
-- Pasting takes files and image flavours only; text is ignored without an error. The URL field is
-  the deliberate path for a link, so the global paste capture has to step aside whenever a text
-  field of ours holds focus and the clipboard carries no file - otherwise the field cannot be
-  pasted into at all.
-- The background fetch ignores CORS, and the page can write clipboard and drag payloads itself.
-  An image URL taken from such a payload (`source: 'page'`) therefore only reaches a public host or
-  the frame's own origin, is checked again after redirects, and must answer with an `image/*`
-  type. A URL typed into the field (`source: 'user'`) has none of these limits.
+- The content script stays side-effect free until a file input is clicked; the overlay is created
+  on demand and removed on close.
+- Content-script UI carries **no** SFC `<style>` blocks: `overlay.css?inline` goes into a
+  constructable stylesheet in a closed shadow root, host properties are set via CSSOM with
+  `!important`.
+- Nothing may depend on the page's CSP: `createImageBitmap` for images, background `fetch` for
+  downloads. The `<img>` fallback in `canvas.ts` (SVG only) is the one exception.
+- The page's own input is never clicked; the overlay has its own file input in the shadow root.
+- A file's bytes only change where the user asked (editor, `accept` conversion, hash button,
+  metadata removal). Thumbnails and the preview are display only.
+- Background downloads bypass CORS, so URLs from page-writable clipboard/drag payloads are
+  restricted (`source: 'page'`); typed URLs are not.
 
 ## Commands (npm + Node 22)
 
-- `npm run build` / `build:firefox`: production builds → `.output/{chrome,firefox}-mv3`
-- `npm run lint:types`: `wxt prepare` + `vue-tsc`
-- `npm run lint:code` (`format` to format)
-- `npm run lint:ext`: Firefox build + `web-ext lint`. Two warnings are expected and unfixable:
-  `UNSAFE_VAR_ASSIGNMENT` fires on Vue's own `runtime-dom`, not on our code.
-- `npm test`: Vitest
-- `npm run release <version>`: full release, see README
+- `npm run build` / `build:firefox`, `npm test`, `npm run lint:types`, `npm run lint:code`
+  (`format` to format), `npm run release <version>` (see README)
+- `npm run lint:ext`: two `UNSAFE_VAR_ASSIGNMENT` warnings from Vue's `runtime-dom` are expected.
+- Browser testing: `npm run build:e2e` (open shadow root) + `npm run testpage`, see README.
 
-## Internationalization
+## Conventions and pitfalls
 
-All user-facing strings live in `public/_locales/{en,de}/messages.json` and are accessed via `t()`
-(`lib/i18n.ts`), never hardcoded. Add every new key to **both** locales. German uses the informal
-"Du" form.
-
-## Key Technical Details
-
+- User-facing strings only via `t()` from `public/_locales/{en,de}/messages.json`; every key in
+  **both** locales, German in the informal "Du" form.
+- Use `browser` from `wxt/browser`, not `chrome.*`.
 - `typescript` is pinned to 6.x: `vue-tsc` cannot drive TypeScript 7 yet.
-- `web-ext` is a devDependency because WXT 0.21 declares it as an optional peer; without it `wxt`
-  falls back to its manual runner and no browser is launched for `npm run dev`.
-- The unified `browser` API (`wxt/browser`) is used instead of raw `chrome.*`.
-- `browser.storage.sync` requires the explicit Gecko ID in `wxt.config.ts` on Firefox.
-- A `<dialog>` cannot host a shadow root — it wraps a `<div>` that does.
+- `web-ext` is a devDependency because WXT 0.21 only declares it as an optional peer; without it
+  `npm run dev` launches no browser.
+- `browser.storage.sync` needs the explicit Gecko ID in `wxt.config.ts` on Firefox.

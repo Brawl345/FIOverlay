@@ -39,6 +39,18 @@ npm run lint:code
 npm test
 ```
 
+### Test page
+
+`npm run testpage` serves a test page at <http://localhost:8765/>. It has file inputs for the
+supported cases and payloads to paste into them: files with metadata, links to images on the local
+network, slow and oversized downloads. For every file a page receives, it shows the date, SHA-256
+and metadata, compared with the original.
+
+`npm run build:e2e` (or `build:e2e:firefox`) builds to `.output/<browser>-mv3-e2e`, where the
+overlay uses an open shadow root so browser automation can reach it. The test page exposes
+`window.fio` for scripts: `await fio.paste('jpeg-meta', 'images')` opens the overlay on an input and
+pastes a payload, `fio.results` holds what the inputs received.
+
 ## Release
 
 Run `npm run release <version>` to build and package both browser versions, create the release files, and publish a GitHub release.

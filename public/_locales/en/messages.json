@@ -62,6 +62,21 @@
   "actionConfirmMany": {
     "message": "Use $1 files"
   },
+  "discardTitle": {
+    "message": "Discard your selection?"
+  },
+  "discardTextOne": {
+    "message": "The file you added will not be passed to the page."
+  },
+  "discardTextMany": {
+    "message": "The $1 files you added will not be passed to the page."
+  },
+  "actionKeep": {
+    "message": "Keep"
+  },
+  "actionDiscard": {
+    "message": "Discard"
+  },
   "actionRemove": {
     "message": "Remove"
   },

@@ -62,6 +62,21 @@
   "actionConfirmMany": {
     "message": "$1 Dateien übernehmen"
   },
+  "discardTitle": {
+    "message": "Auswahl verwerfen?"
+  },
+  "discardTextOne": {
+    "message": "Die hinzugefügte Datei wird nicht an die Seite übergeben."
+  },
+  "discardTextMany": {
+    "message": "Die $1 hinzugefügten Dateien werden nicht an die Seite übergeben."
+  },
+  "actionKeep": {
+    "message": "Behalten"
+  },
+  "actionDiscard": {
+    "message": "Verwerfen"
+  },
   "actionRemove": {
     "message": "Entfernen"
   },

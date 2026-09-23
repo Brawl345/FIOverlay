@@ -3,6 +3,7 @@
 ## v2.2.1
 
 - New filesize is shown while editing images
+- Cancelling the modal while files are loaded shows a confirmation prompt
 - Various bugfixes
 
 ## v2.2.0

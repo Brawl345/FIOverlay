@@ -6,6 +6,7 @@
       "entrypoints/**/*.ts",
       "tests/**/*.ts",
       "scripts/**/*.ts",
+      "testpage/**/*.mjs",
       "*.ts",
       "**/*.json"
     ],

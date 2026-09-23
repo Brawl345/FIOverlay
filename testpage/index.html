@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FIOverlay test page</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --fg: #1d1d1f;
+    --muted: #6e6e73;
+    --line: rgba(0, 0, 0, 0.1);
+    --accent: #0071e3;
+    --ok: #1a7f37;
+    --warn: #b35c00;
+    --bad: #c9252d;
+    --chip: rgba(0, 0, 0, 0.05);
+    --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --fg: #f5f5f7;
+      --muted: #98989d;
+      --line: rgba(255, 255, 255, 0.12);
+      --accent: #2997ff;
+      --ok: #3fb950;
+      --warn: #f0a646;
+      --bad: #ff6961;
+      --chip: rgba(255, 255, 255, 0.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 24px 64px;
+    background: var(--bg);
+    color: var(--fg);
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 1180px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  h2 { margin: 36px 0 12px; font-size: 19px; font-weight: 600; }
+  h3 { margin: 0; font-size: 15px; font-weight: 600; }
+  p { margin: 0; }
+  code { font-family: var(--mono); font-size: 12px; padding: 1px 5px; border-radius: 5px; background: var(--chip); }
+  .lead { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+  .card {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 16px; border-radius: 14px; background: var(--card);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--line);
+  }
+  .card .hint { color: var(--muted); font-size: 12.5px; }
+  .card .expect { font-size: 12.5px; }
+  .card .expect::before { content: 'Expect: '; color: var(--muted); }
+  .trigger { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 32px; }
+  button, .button {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border: 0; border-radius: 8px;
+    background: var(--chip); color: var(--fg);
+    font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  button:hover, .button:hover { filter: brightness(0.96); }
+  button.primary, .button.primary { background: var(--accent); color: #ffffff; }
+  select { font: inherit; font-size: 13px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+  .hidden-input { display: none; }
+  iframe { width: 100%; height: 52px; border: 1px dashed var(--line); border-radius: 8px; }
+  .files { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .files:empty::before { content: 'No files received yet.'; color: var(--muted); font-size: 12.5px; }
+  .file {
+    display: grid; grid-template-columns: 56px 1fr; gap: 10px;
+    padding: 10px; border-radius: 10px; background: var(--chip);
+  }
+  .file img, .file .thumb {
+    width: 56px; height: 56px; border-radius: 8px; object-fit: cover;
+    background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0 / 12px 12px;
+  }
+  .file .thumb { display: grid; place-items: center; font-size: 11px; font-weight: 600; color: var(--muted); }
+  .file .name { font-weight: 600; word-break: break-all; }
+  .facts { display: grid; grid-template-columns: max-content 1fr; gap: 1px 10px; margin-top: 4px; font-size: 12px; }
+  .facts dt { color: var(--muted); }
+  .facts dd { margin: 0; font-family: var(--mono); font-size: 11.5px; overflow-wrap: anywhere; }
+  .facts dd.hash { cursor: copy; }
+  .badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .badge { padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--chip); }
+  .badge.ok { color: var(--ok); }
+  .badge.warn { color: var(--warn); }
+  .badge.bad { color: var(--bad); }
+  .payloads { display: flex; flex-direction: column; gap: 14px; }
+  #payloads { display: flex; flex-direction: column; gap: 16px; }
+  .payload-group { display: flex; flex-direction: column; gap: 8px; }
+  .payload-group h3 { font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .payload-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .payload-list button { flex-direction: column; align-items: flex-start; gap: 0; text-align: left; }
+  .payload-list button small { color: var(--muted); font-weight: 400; font-size: 11.5px; }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .log {
+    height: 220px; overflow: auto; margin: 0; padding: 12px;
+    border-radius: 12px; background: var(--card); box-shadow: 0 0 0 1px var(--line);
+    font: 12px/1.6 var(--mono); white-space: pre-wrap;
+  }
+  .log .time { color: var(--muted); }
+  .log .error { color: var(--bad); }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    padding: 10px 16px; border-radius: 10px; background: var(--fg); color: var(--bg);
+    font-size: 13px; opacity: 0; transition: opacity 160ms ease; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<main>
+  <h1>FIOverlay test page</h1>
+  <p class="lead">
+    Run <code>npm run testpage</code> and load the <code>npm run build:e2e</code> build, whose overlay uses an
+    open shadow root for automation. Every received file lists its date, SHA-256 and metadata; files that
+    came from a payload below are compared against the original.
+  </p>
+
+  <h2>File inputs</h2>
+  <div class="grid" id="cases"></div>
+
+  <h2>Payloads</h2>
+  <div class="card payloads">
+    <div class="toolbar">
+      <label for="target">Paste into</label>
+      <select id="target"></select>
+      <span class="hint">Opens the overlay on that input, then dispatches a <code>paste</code> event into it.</span>
+    </div>
+    <div id="payloads"></div>
+  </div>
+
+  <h2>Real clipboard</h2>
+  <div class="card">
+    <p class="hint">Writes to the system clipboard. Open an input afterwards and press ⌘V or use the paste button.
+      URLs belong in the overlay's URL field, where no restriction applies.</p>
+    <div class="payload-list" id="clipboard"></div>
+  </div>
+
+  <h2>Event log</h2>
+  <div class="toolbar" style="margin-bottom: 8px">
+    <button type="button" id="clear-log">Clear log</button>
+    <button type="button" id="clear-results">Clear results</button>
+  </div>
+  <pre class="log" id="log"></pre>
+</main>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const PORT = location.port || '80';
+const OTHER_HOST = location.hostname === '127.0.0.1' ? 'localhost' : '127.0.0.1';
+const ORIGIN = location.origin;
+/** Payload files carry an old date, so the overlay's date button is visible. */
+const PAYLOAD_DATE = new Date('2020-01-01T12:00:00').getTime();
+
+const $ = (selector, root = document) => root.querySelector(selector);
+const el = (tag, props = {}, ...children) => {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children.filter((child) => child != null));
+  return node;
+};
+
+// ---------- log & toast ----------
+
+const logBox = $('#log');
+function log(message, isError = false) {
+  const time = new Date().toLocaleTimeString();
+  logBox.append(el('span', { className: 'time', textContent: `${time}  ` }), el('span', { className: isError ? 'error' : '', textContent: `${message}\n` }));
+  logBox.scrollTop = logBox.scrollHeight;
+}
+let toastTimer;
+function toast(message) {
+  const box = $('#toast');
+  box.textContent = message;
+  box.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => box.classList.remove('show'), 2400);
+}
+$('#clear-log').addEventListener('click', () => { logBox.textContent = ''; });
+
+// ---------- byte helpers ----------
+
+const hex = (buffer) => Array.from(new Uint8Array(buffer), (b) => b.toString(16).padStart(2, '0')).join('');
+const sha256 = async (blob) => hex(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
+const ascii = (text) => Array.from(text, (char) => char.charCodeAt(0));
+const fourCC = (bytes, offset) => String.fromCharCode(...bytes.subarray(offset, offset + 4));
+
+const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (const byte of bytes) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+const JPEG_NAMES = { 0xe0: 'APP0', 0xe1: 'APP1', 0xe2: 'APP2 ICC', 0xed: 'APP13 IPTC', 0xee: 'APP14 Adobe', 0xfe: 'COM' };
+
+/** Metadata-relevant segments or chunks, as short labels. */
+function metadataOf(bytes) {
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) {
+    const found = [];
+    let offset = 2;
+    while (offset + 4 <= bytes.length) {
+      if (bytes[offset] !== 0xff) break;
+      const marker = bytes[offset + 1];
+      if (marker === 0xff) { offset++; continue; }
+      if (marker === 0xda || marker === 0xd9) break;
+      const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+      if (marker >= 0xe0 && marker <= 0xef || marker === 0xfe) {
+        let label = JPEG_NAMES[marker] ?? `APP${marker - 0xe0}`;
+        const head = String.fromCharCode(...bytes.subarray(offset + 4, offset + 34));
+        if (marker === 0xe0) label += head.startsWith('JFIF') ? ' JFIF' : '';
+        if (marker === 0xe1) label += head.startsWith('Exif') ? ' EXIF' : head.startsWith('http://ns.adobe.com/xap') ? ' XMP' : '';
+        found.push(label);
+      }
+      offset += 2 + length;
+    }
+    return { format: 'JPEG', found };
+  }
+  if (bytes[0] === 0x89 && fourCC(bytes, 1) === 'PNG\r') {
+    const found = [];
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    for (let offset = 8; offset + 8 <= bytes.length; ) {
+      const type = fourCC(bytes, offset + 4);
+      if (!['IHDR', 'IDAT', 'IEND', 'PLTE'].includes(type)) found.push(type);
+      offset += 12 + view.getUint32(offset);
+    }
+    return { format: 'PNG', found };
+  }
+  if (fourCC(bytes, 0) === 'RIFF' && fourCC(bytes, 8) === 'WEBP') {
+    const found = [];
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    for (let offset = 12; offset + 8 <= bytes.length; ) {
+      const size = view.getUint32(offset + 4, true);
+      found.push(fourCC(bytes, offset).trim());
+      offset += 8 + size + (size % 2);
+    }
+    return { format: 'WebP', found };
+  }
+  return null;
+}
+
+// ---------- payload builders ----------
+
+function drawSample(label, width = 320, height = 200) {
+  const canvas = el('canvas', { width, height });
+  const context = canvas.getContext('2d');
+  const gradient = context.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, '#ff5f6d');
+  gradient.addColorStop(1, '#5b6cff');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = '#ffffff';
+  context.fillRect(width / 4, height / 4, width / 2, height / 2);
+  context.fillStyle = '#1d1d1f';
+  context.font = `600 ${Math.round(height / 9)}px -apple-system, sans-serif`;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(label, width / 2, height / 2);
+  return canvas;
+}
+
+const canvasBlob = (canvas, type, quality) => new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+const asFile = (parts, name, type) => new File(parts, name, { type, lastModified: PAYLOAD_DATE });
+
+function jpegSegment(marker, payload) {
+  const length = payload.length + 2;
+  return [0xff, marker, length >> 8, length & 0xff, ...payload];
+}
+
+function pngChunk(type, data) {
+  const body = new Uint8Array([...ascii(type), ...data]);
+  const out = new Uint8Array(12 + data.length);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, data.length);
+  out.set(body, 4);
+  view.setUint32(8 + data.length, crc32(body));
+  return out;
+}
+
+async function jpegWithMetadata() {
+  const source = new Uint8Array(await (await canvasBlob(drawSample('JPEG + EXIF'), 'image/jpeg', 0.9)).arrayBuffer());
+  const exif = [...ascii('Exif\0\0MM\0*'), 0, 0, 0, 8, 0, 0, ...ascii('GPS 52.5200N 13.4050E')];
+  const xmp = [...ascii('http://ns.adobe.com/xap/1.0/\0'), ...ascii('<x:xmpmeta><dc:creator>Jane Doe</dc:creator></x:xmpmeta>')];
+  const iptc = ascii('Photoshop 3.0\0 8BIM caption: private');
+  const adobe = [...ascii('Adobe'), 0, 100, 0, 0, 0, 0, 1];
+  const comment = ascii('Shot on my secret phone');
+  const bytes = new Uint8Array([
+    0xff, 0xd8,
+    ...jpegSegment(0xe1, exif),
+    ...jpegSegment(0xe1, xmp),
+    ...jpegSegment(0xed, iptc),
+    ...jpegSegment(0xee, adobe),
+    ...jpegSegment(0xfe, comment),
+    ...source.subarray(2),
+  ]);
+  return asFile([bytes], 'metadata.jpg', 'image/jpeg');
+}
+
+async function pngWithMetadata() {
+  const source = new Uint8Array(await (await canvasBlob(drawSample('PNG + tEXt'), 'image/png')).arrayBuffer());
+  const ihdrEnd = 8 + 25;
+  const bytes = new Uint8Array([
+    ...source.subarray(0, ihdrEnd),
+    ...pngChunk('tEXt', ascii('Author\0Jane Doe')),
+    ...pngChunk('iTXt', ascii('Comment\0\0\0\0\0private note')),
+    ...pngChunk('tIME', [0x07, 0xe4, 1, 1, 12, 0, 0]),
+    ...source.subarray(ihdrEnd),
+  ]);
+  return asFile([bytes], 'metadata.png', 'image/png');
+}
+
+const SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="100" viewBox="0 0 160 100">
+<rect width="160" height="100" rx="14" fill="#5b6cff"/><circle cx="50" cy="50" r="28" fill="#ffffff"/>
+<text x="112" y="58" font-family="sans-serif" font-size="22" fill="#ffffff" text-anchor="middle">SVG</text></svg>`;
+
+const url = (path, host = location.hostname) => `http://${host}:${PORT}${path}`;
+const imgHtml = (src) => `<meta charset="utf-8"><img src="${src}" alt="payload">`;
+
+/**
+ * `files` payloads paste real files; `html` ones only carry markup, like a
+ * selection or a drag from another page, so the extension has to download.
+ */
+const PAYLOADS = [
+  { group: 'Files', id: 'png', label: 'PNG', note: '320×200 canvas', files: async () => [asFile([await canvasBlob(drawSample('PNG'), 'image/png')], 'sample.png', 'image/png')] },
+  { group: 'Files', id: 'three-png', label: '3 PNGs', note: 'Multiple files at once', files: async () => Promise.all([1, 2, 3].map(async (n) => asFile([await canvasBlob(drawSample(`#${n}`, 240, 160), 'image/png')], `sample-${n}.png`, 'image/png'))) },
+  { group: 'Files', id: 'jpeg-meta', label: 'JPEG with metadata', note: 'EXIF, XMP, IPTC, Adobe APP14, COM', files: async () => [await jpegWithMetadata()] },
+  { group: 'Files', id: 'png-meta', label: 'PNG with metadata', note: 'tEXt, iTXt, tIME', files: async () => [await pngWithMetadata()] },
+  { group: 'Files', id: 'webp', label: 'WebP', note: 'Converted where the field refuses it', files: async () => [asFile([await canvasBlob(drawSample('WebP'), 'image/webp', 0.9)], 'sample.webp', 'image/webp')] },
+  { group: 'Files', id: 'svg', label: 'SVG', note: 'Vector, not editable', files: async () => [asFile([SVG], 'vector.svg', 'image/svg+xml')] },
+  { group: 'Files', id: 'text-file', label: 'Text file', note: 'Rejected by image fields', files: async () => [asFile(['Hello from the test page\n'], 'notes.txt', 'text/plain')] },
+  { group: 'Page-supplied image links', id: 'html-same', label: 'Same origin image', note: 'Downloads', html: () => imgHtml(url('/image.png')) },
+  { group: 'Page-supplied image links', id: 'html-private', label: 'Other local origin', note: `${OTHER_HOST}: blocked, local network`, html: () => imgHtml(url('/image.png', OTHER_HOST)) },
+  { group: 'Page-supplied image links', id: 'html-text', label: 'Same origin, not an image', note: 'Blocked, not an image', html: () => imgHtml(url('/not-an-image')) },
+  { group: 'Page-supplied image links', id: 'html-redirect', label: 'Public name → local redirect', note: 'nip.io, needs DNS; blocked after redirect', html: () => imgHtml(url('/redirect', '127.0.0.1.nip.io')) },
+  { group: 'Page-supplied image links', id: 'html-public', label: 'Public image', note: 'google.com favicon, needs internet', html: () => imgHtml('https://www.google.com/favicon.ico') },
+  { group: 'Page-supplied image links', id: 'html-slow', label: 'Slow download', note: '3 s, progress bar', html: () => imgHtml(url('/slow.png')) },
+  { group: 'Page-supplied image links', id: 'html-large', label: 'Too large', note: 'Declares 64 MB + 1 byte', html: () => imgHtml(url('/too-large.png')) },
+  { group: 'Page-supplied image links', id: 'html-bidi', label: 'Bidi file name', note: 'Content-Disposition with U+202E', html: () => imgHtml(url('/disposition.png')) },
+  { group: 'Page-supplied image links', id: 'html-data', label: 'data: URL', note: 'No download', html: async () => imgHtml(drawSample('data:', 120, 80).toDataURL('image/png')) },
+  { group: 'Other', id: 'text-only', label: 'Plain text', note: 'Ignored without an error', text: () => 'just some text' },
+];
+
+/** name → { sha, lastModified } of every file a payload produced. */
+const originals = new Map();
+
+async function buildTransfer(payload) {
+  const transfer = new DataTransfer();
+  if (payload.files) {
+    for (const file of await payload.files()) {
+      originals.set(file.name, { sha: await sha256(file), lastModified: file.lastModified, size: file.size });
+      transfer.items.add(file);
+    }
+  }
+  if (payload.html) transfer.setData('text/html', await payload.html());
+  if (payload.text) transfer.setData('text/plain', payload.text());
+  return transfer;
+}
+
+// ---------- result rendering ----------
+
+const results = {};
+
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function formatDate(ms) {
+  const date = new Date(ms);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function formatAge(ms) {
+  const age = (Date.now() - ms) / 1000;
+  if (age < 60) return `${Math.round(age)} s ago`;
+  if (age < 3600) return `${Math.round(age / 60)} min ago`;
+  if (age < 86400) return `${Math.round(age / 3600)} h ago`;
+  return `${Math.round(age / 86400)} d ago`;
+}
+
+/** The payload a received file most likely came from; a conversion changes the extension. */
+function originalFor(name) {
+  if (originals.has(name)) return originals.get(name);
+  const stem = name.replace(/\.[^.]+$/, '');
+  for (const [key, value] of originals) if (key.replace(/\.[^.]+$/, '') === stem) return value;
+  return null;
+}
+
+async function describe(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let dimensions = null;
+  try {
+    const bitmap = await createImageBitmap(file);
+    dimensions = `${bitmap.width} × ${bitmap.height} px`;
+    bitmap.close();
+  } catch {
+    // SVG and friends only decode through an <img>.
+    if (file.type.startsWith('image/')) {
+      const image = new Image();
+      image.src = URL.createObjectURL(file);
+      try {
+        await image.decode();
+        dimensions = `${image.naturalWidth} × ${image.naturalHeight} px`;
+      } catch {}
+      URL.revokeObjectURL(image.src);
+    }
+  }
+  return {
+    name: file.name,
+    type: file.type || '(none)',
+    size: file.size,
+    dimensions,
+    lastModified: file.lastModified,
+    sha256: hex(await crypto.subtle.digest('SHA-256', bytes)),
+    metadata: metadataOf(bytes),
+  };
+}
+
+function badgesFor(info) {
+  const badges = [];
+  const original = originalFor(info.name);
+  if (original) {
+    badges.push(info.sha256 === original.sha ? ['bytes unchanged', 'ok'] : ['bytes changed', 'warn']);
+    badges.push(info.lastModified === original.lastModified ? ['date kept', 'ok'] : ['date changed', 'warn']);
+  }
+  if (/[\p{Cc}\p{Bidi_Control}]/u.test(info.name)) badges.push(['invisible characters in name', 'bad']);
+  const leaks = info.metadata?.found.filter((label) => /EXIF|XMP|IPTC|COM|tEXt|iTXt|zTXt|eXIf|tIME/.test(label)) ?? [];
+  if (leaks.length > 0) badges.push([`metadata: ${leaks.join(', ')}`, 'bad']);
+  else if (info.metadata) badges.push(['no metadata', 'ok']);
+  return badges;
+}
+
+function renderFile(file, info) {
+  const isImage = file.type.startsWith('image/');
+  const thumb = isImage
+    ? el('img', { src: URL.createObjectURL(file), alt: '' })
+    : el('div', { className: 'thumb', textContent: (file.name.split('.').pop() ?? '?').slice(0, 4).toUpperCase() });
+  const facts = el('dl', { className: 'facts' });
+  const fact = (term, value, className = '') => facts.append(el('dt', { textContent: term }), el('dd', { textContent: value, className }));
+  const hashFact = (term, sha) => {
+    fact(term, `${sha.slice(0, 16)}…`, 'hash');
+    facts.lastChild.title = `${sha}\nClick to copy`;
+    facts.lastChild.addEventListener('click', () => navigator.clipboard.writeText(sha).then(() => toast('Hash copied')));
+  };
+  fact('Type', info.type);
+  fact('Size', `${formatSize(info.size)} (${info.size} B)`);
+  if (info.dimensions) fact('Pixels', info.dimensions);
+  const dateFact = (term, ms) => {
+    fact(term, formatDate(ms));
+    facts.lastChild.title = `${formatAge(ms)}\nlastModified ${ms}`;
+  };
+  dateFact('Modified', info.lastModified);
+  hashFact('SHA-256', info.sha256);
+  const original = originalFor(info.name);
+  if (original) {
+    dateFact('Original date', original.lastModified);
+    hashFact('Original hash', original.sha);
+  }
+  if (info.metadata) fact(info.metadata.format, info.metadata.found.join(', ') || '(none)');
+  const badges = el('div', { className: 'badges' }, ...badgesFor(info).map(([text, tone]) => el('span', { className: `badge ${tone}`, textContent: text })));
+  return el('li', { className: 'file' }, thumb, el('div', {}, el('div', { className: 'name', textContent: info.name }), facts, badges));
+}
+
+async function showFiles(id, input) {
+  const list = $(`#files-${id}`);
+  for (const img of list.querySelectorAll('img')) URL.revokeObjectURL(img.src);
+  const files = Array.from(input.files ?? []);
+  const infos = await Promise.all(files.map(describe));
+  results[id] = infos;
+  list.replaceChildren(...files.map((file, index) => renderFile(file, infos[index])));
+  log(`${id}: change with ${files.length} file(s)${files.length ? ` - ${infos.map((info) => `${info.name} (${formatSize(info.size)})`).join(', ')}` : ''}`);
+}
+
+function watchInput(id, input) {
+  input.addEventListener('change', () => void showFiles(id, input));
+  input.addEventListener('input', () => log(`${id}: input event`));
+  input.addEventListener('cancel', () => log(`${id}: native picker cancelled`));
+}
+
+$('#clear-results').addEventListener('click', () => {
+  for (const list of document.querySelectorAll('.files')) list.replaceChildren();
+  for (const key of Object.keys(results)) delete results[key];
+});
+
+// ---------- cases ----------
+
+/** `open` returns the input it opened, so a paste can go into the right document. */
+const CASES = [
+  { id: 'plain', title: 'Any file', hint: 'No accept, single file.', expect: 'Overlay; any payload is accepted, only the last file is kept.', html: '<input type="file">' },
+  { id: 'images', title: 'Images, multiple', hint: '<code>accept="image/*" multiple</code>', expect: 'Overlay; all images are queued.', html: '<input type="file" accept="image/*" multiple>' },
+  { id: 'jpeg', title: 'JPEG only', hint: '<code>accept="image/jpeg"</code>', expect: 'PNG and WebP are converted to JPEG; SVG and text are refused.', html: '<input type="file" accept="image/jpeg" multiple>' },
+  { id: 'png-ext', title: 'PNG by extension', hint: '<code>accept=".png"</code>', expect: 'JPEG and WebP are converted to PNG.', html: '<input type="file" accept=".png">' },
+  { id: 'documents', title: 'Documents only', hint: '<code>accept=".pdf,application/pdf"</code>', expect: 'Images are refused with the accept hint.', html: '<input type="file" accept=".pdf,application/pdf">' },
+  { id: 'camera', title: 'Camera capture', hint: '<code>accept="image/*" capture="environment"</code>', expect: 'The overlay shows a camera button.', html: '<input type="file" accept="image/*" capture="environment">' },
+  { id: 'label', title: 'Styled label', hint: 'Hidden input inside a <code>&lt;label&gt;</code>.', expect: 'Clicking the label opens the overlay.', html: '<label class="button primary">Upload photo<input type="file" accept="image/*" class="hidden-input"></label>' },
+  { id: 'button', title: 'Custom button', hint: 'Button calls <code>input.click()</code> on a hidden input.', expect: 'Overlay opens from the synthetic click.', html: '<button type="button" class="primary">Choose image</button><input type="file" accept="image/*" class="hidden-input">', setup: (card, input) => $('button', card).addEventListener('click', () => input.click()) },
+  { id: 'showpicker', title: 'showPicker()', hint: 'Button calls <code>input.showPicker()</code>.', expect: 'The page-world hook announces it; overlay opens.', html: '<button type="button" class="primary">showPicker()</button><input type="file" accept="image/*" class="hidden-input">', setup: (card, input) => $('button', card).addEventListener('click', () => input.showPicker()), open: (input) => input.showPicker() },
+  { id: 'detached', title: 'Detached input', hint: 'A new <code>createElement(\'input\')</code> is clicked without ever being attached.', expect: 'Overlay opens; files land on the detached element.', html: '<button type="button" class="primary">Open detached input</button>', detached: true },
+  { id: 'iframe', title: 'Same-origin iframe', hint: 'Input inside <code>frame.html</code>.', expect: 'The overlay opens inside the frame.', html: '<iframe src="/frame.html" title="Test frame"></iframe>' },
+  { id: 'directory', title: 'Directory picker', hint: '<code>webkitdirectory</code>', expect: 'Native folder dialog, no overlay.', html: '<input type="file" webkitdirectory>', noPayload: true },
+  { id: 'disabled', title: 'Disabled input', hint: '<code>disabled</code>', expect: 'Nothing happens.', html: '<input type="file" disabled>', noPayload: true },
+];
+
+const inputs = {};
+
+function detachedInput() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.multiple = true;
+  watchInput('detached', input);
+  inputs.detached = input;
+  return input;
+}
+
+for (const test of CASES) {
+  const trigger = el('div', { className: 'trigger' });
+  trigger.innerHTML = test.html;
+  const card = el('section', { className: 'card', id: `case-${test.id}` },
+    el('h3', { textContent: test.title }),
+    Object.assign(el('p', { className: 'hint' }), { innerHTML: test.hint }),
+    trigger,
+    el('p', { className: 'expect', textContent: test.expect }),
+    el('ol', { className: 'files', id: `files-${test.id}` }),
+  );
+  $('#cases').append(card);
+
+  if (test.detached) {
+    $('button', card).addEventListener('click', () => detachedInput().click());
+    continue;
+  }
+  if (test.id === 'iframe') {
+    const frame = $('iframe', card);
+    frame.addEventListener('load', () => {
+      const input = frame.contentDocument.querySelector('input');
+      inputs.iframe = input;
+      watchInput('iframe', input);
+    });
+    continue;
+  }
+  const input = $('input', card);
+  inputs[test.id] = input;
+  watchInput(test.id, input);
+  test.setup?.(card, input);
+}
+
+window.addEventListener('fioverlay:picker', (event) => log(`picker announced by the page-world hook on <input accept="${event.target.accept}">`), true);
+
+// ---------- paste flow ----------
+
+function openCase(id) {
+  const test = CASES.find((entry) => entry.id === id);
+  if (test.detached) {
+    const input = detachedInput();
+    input.click();
+    return input;
+  }
+  const input = inputs[id];
+  if (!input) throw new Error(`input ${id} is not ready`);
+  if (test.open) test.open(input);
+  else input.click();
+  return input;
+}
+
+function waitForOverlay(doc) {
+  const find = () => doc.querySelector('html > dialog');
+  return new Promise((resolve, reject) => {
+    if (find()) return resolve(find());
+    const observer = new MutationObserver(() => {
+      if (!find()) return;
+      observer.disconnect();
+      clearTimeout(timer);
+      resolve(find());
+    });
+    observer.observe(doc.documentElement, { childList: true });
+    const timer = setTimeout(() => {
+      observer.disconnect();
+      reject(new Error('the overlay did not open - is the extension loaded and enabled for this host?'));
+    }, 3000);
+  });
+}
+
+/** Opens the overlay on `targetId` (unless it already is open) and pastes the payload into it. */
+async function paste(payloadId, targetId = $('#target').value) {
+  const payload = PAYLOADS.find((entry) => entry.id === payloadId);
+  if (!payload) throw new Error(`unknown payload ${payloadId}`);
+  const doc = openCase(targetId).ownerDocument;
+  await waitForOverlay(doc);
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  const transfer = await buildTransfer(payload);
+  doc.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }));
+  log(`pasted "${payload.label}" into ${targetId}`);
+}
+
+const target = $('#target');
+for (const test of CASES.filter((entry) => !entry.noPayload)) target.append(el('option', { value: test.id, textContent: test.title }));
+target.value = 'images';
+
+const groups = new Map();
+for (const payload of PAYLOADS) {
+  if (!groups.has(payload.group)) {
+    const list = el('div', { className: 'payload-list' });
+    $('#payloads').append(el('div', { className: 'payload-group' }, el('h3', { textContent: payload.group }), list));
+    groups.set(payload.group, list);
+  }
+  const button = el('button', { type: 'button' }, el('span', { textContent: payload.label }), el('small', { textContent: payload.note }));
+  button.addEventListener('click', () => paste(payload.id).catch((error) => { log(error.message, true); toast(error.message); }));
+  groups.get(payload.group).append(button);
+}
+
+// ---------- real clipboard ----------
+
+const CLIPBOARD = [
+  { label: 'PNG image', note: 'image/png', write: async () => navigator.clipboard.write([new ClipboardItem({ 'image/png': canvasBlob(drawSample('Clipboard'), 'image/png') })]) },
+  { label: 'HTML with other-origin image', note: 'Blocked when pasted', write: async () => navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([imgHtml(url('/image.png', OTHER_HOST))], { type: 'text/html' }) })]) },
+  { label: 'URL: other local origin', note: 'For the URL field, allowed', write: () => navigator.clipboard.writeText(url('/image.png', OTHER_HOST)) },
+  { label: 'URL: slow download', note: 'Progress bar', write: () => navigator.clipboard.writeText(url('/slow.png')) },
+  { label: 'URL: too large', note: 'Size limit', write: () => navigator.clipboard.writeText(url('/too-large.png')) },
+  { label: 'URL: not an image', note: 'Allowed from the field', write: () => navigator.clipboard.writeText(url('/not-an-image')) },
+];
+for (const entry of CLIPBOARD) {
+  const button = el('button', { type: 'button' }, el('span', { textContent: entry.label }), el('small', { textContent: entry.note }));
+  button.addEventListener('click', () => entry.write().then(() => toast(`Copied: ${entry.label}`), (error) => toast(`Clipboard refused: ${error.message}`)));
+  $('#clipboard').append(button);
+}
+
+/** Automation hooks: `await fio.paste('png', 'images')`, then read `fio.results.images`. */
+window.fio = { paste, open: openCase, results, payloads: PAYLOADS.map((entry) => entry.id), cases: CASES.map((entry) => entry.id) };
+log(`ready - page origin ${ORIGIN}, other local origin ${url('', OTHER_HOST)}`);
+</script>
+</body>
+</html>
