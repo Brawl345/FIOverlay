@@ -11,6 +11,12 @@
   "actionTitleDisabled": {
     "message": "FIOverlay ist hier aus - klicke, um es für diese Domain einzuschalten"
   },
+  "actionToggleQuotaExceeded": {
+    "message": "FIOverlay konnte diese Domain nicht ausschalten: Die Liste der deaktivierten Domains ist voll. Entferne in den Optionen ein paar Einträge."
+  },
+  "actionToggleFailed": {
+    "message": "FIOverlay konnte die Änderung nicht speichern - klicke, um es erneut zu versuchen"
+  },
   "overlayTitle": {
     "message": "Datei auswählen"
   },
@@ -110,6 +116,12 @@
   "errorInvalidUrl": {
     "message": "Es lassen sich nur http-, https- und data-URLs laden."
   },
+  "errorPrivateNetwork": {
+    "message": "Ein eingefügtes oder hineingezogenes Bild aus dem lokalen Netzwerk wird nicht geladen - gib seine URL stattdessen in das Feld ein."
+  },
+  "errorNotAnImage": {
+    "message": "Der eingefügte oder hineingezogene Link zeigt auf kein Bild."
+  },
   "errorTooLarge": {
     "message": "Die Datei ist zu groß (max. 64 MB)."
   },
@@ -205,5 +217,11 @@
   },
   "optionsImportFailed": {
     "message": "Die Datei konnte nicht gelesen werden."
+  },
+  "optionsQuotaExceeded": {
+    "message": "Die Liste ist zu groß für die Browser-Synchronisierung. Entferne ein paar Domains und versuche es erneut."
+  },
+  "optionsSaveFailed": {
+    "message": "Die Liste konnte nicht gespeichert werden."
   }
 }

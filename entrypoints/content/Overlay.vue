@@ -126,31 +126,25 @@ async function convertForField(file: File): Promise<Item | null> {
 
 async function addFiles(files: readonly File[]): Promise<void> {
   const pattern = accept.value;
-  const accepted: Item[] = [];
-  let rejected = 0;
-  let converted = 0;
-
-  for (const file of files) {
-    if (!pattern || matchesAccept(file, pattern)) {
-      accepted.push({
-        id: nextId++,
-        file,
-        name: file.name,
-        dimensions: null,
-        converted: null,
-        resetDate: false,
-        rehash: false,
-      });
-      continue;
-    }
-    const item = await convertForField(file);
-    if (!item) {
-      rejected++;
-      continue;
-    }
-    accepted.push(item);
-    converted++;
-  }
+  const results = await Promise.all(
+    files.map(
+      (file): Promise<Item | null> | Item =>
+        !pattern || matchesAccept(file, pattern)
+          ? {
+              id: nextId++,
+              file,
+              name: file.name,
+              dimensions: null,
+              converted: null,
+              resetDate: false,
+              rehash: false,
+            }
+          : convertForField(file),
+    ),
+  );
+  const accepted = results.filter((item): item is Item => item !== null);
+  const rejected = results.length - accepted.length;
+  const converted = accepted.filter((item) => item.converted !== null).length;
 
   if (accepted.length === 0) {
     error.value =

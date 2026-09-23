@@ -101,6 +101,13 @@ describe('sanitizeFileName', () => {
     expect(sanitizeFileName('../../etc/passwd')).toBe('_.._etc_passwd');
     expect(sanitizeFileName('x'.repeat(300)).length).toBe(200);
   });
+
+  it('drops control characters and bidi overrides', () => {
+    expect(sanitizeFileName(`photo${String.fromCharCode(0x202e)}gpj.exe`)).toBe(
+      'photogpj.exe',
+    );
+    expect(sanitizeFileName('a\u0000b\nc.png')).toBe('abc.png');
+  });
 });
 
 describe('formatSize', () => {

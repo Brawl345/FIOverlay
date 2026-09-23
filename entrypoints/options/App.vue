@@ -4,6 +4,7 @@ import { browser } from 'wxt/browser';
 import {
   buildExport,
   DISABLED_DOMAINS_KEY,
+  DomainQuotaError,
   getDisabledDomains,
   normalizeDomain,
   parseImport,
@@ -43,8 +44,18 @@ async function toggleStripMetadata(event: Event): Promise<void> {
   notify(enabled ? 'optionsPrivacyOn' : 'optionsPrivacyOff');
 }
 
-async function save(next: string[]): Promise<void> {
-  domains.value = await setDisabledDomains(next);
+/** Reports a failed write itself and returns whether the list was stored. */
+async function save(next: string[]): Promise<boolean> {
+  try {
+    domains.value = await setDisabledDomains(next);
+    return true;
+  } catch (error) {
+    notify(
+      error instanceof DomainQuotaError ? 'optionsQuotaExceeded' : 'optionsSaveFailed',
+      true,
+    );
+    return false;
+  }
 }
 
 async function add(): Promise<void> {
@@ -57,18 +68,18 @@ async function add(): Promise<void> {
     notify('optionsAlreadyListed', true);
     return;
   }
-  await save([...domains.value, domain]);
+  if (!(await save([...domains.value, domain]))) return;
   input.value = '';
   notify('optionsAdded', false, domain);
 }
 
 async function remove(domain: string): Promise<void> {
-  await save(domains.value.filter((entry) => entry !== domain));
+  if (!(await save(domains.value.filter((entry) => entry !== domain)))) return;
   notify('optionsRemoved', false, domain);
 }
 
 async function clear(): Promise<void> {
-  await save([]);
+  if (!(await save([]))) return;
   notify('optionsCleared');
 }
 
@@ -91,14 +102,16 @@ async function importDomains(event: Event): Promise<void> {
   target.value = '';
   if (!file) return;
 
+  let imported: string[];
   try {
-    const imported = parseImport(await file.text());
-    const before = domains.value.length;
-    await save(sortDomains([...domains.value, ...imported]));
-    notify('optionsImported', false, String(domains.value.length - before));
+    imported = parseImport(await file.text());
   } catch {
     notify('optionsImportFailed', true);
+    return;
   }
+  const before = domains.value.length;
+  if (!(await save(sortDomains([...domains.value, ...imported])))) return;
+  notify('optionsImported', false, String(domains.value.length - before));
 }
 
 function onStorageChanged(changes: Record<string, unknown>, area: string): void {

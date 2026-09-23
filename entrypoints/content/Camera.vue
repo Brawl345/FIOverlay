@@ -44,6 +44,8 @@ async function shoot(): Promise<void> {
   }
 }
 
+let unmounted = false;
+
 onMounted(async () => {
   try {
     // `ideal` keeps a machine with only one camera working.
@@ -51,6 +53,11 @@ onMounted(async () => {
       video: { facingMode: { ideal: props.facing } },
       audio: false,
     });
+    // Closed while the permission prompt was still up.
+    if (unmounted) {
+      stop();
+      return;
+    }
     const element = video.value;
     if (!element) return;
     element.srcObject = stream.value;
@@ -61,7 +68,10 @@ onMounted(async () => {
   }
 });
 
-onUnmounted(stop);
+onUnmounted(() => {
+  unmounted = true;
+  stop();
+});
 </script>
 
 <template>

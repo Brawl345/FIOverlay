@@ -11,6 +11,12 @@
   "actionTitleDisabled": {
     "message": "FIOverlay is off here - click to enable for this domain"
   },
+  "actionToggleQuotaExceeded": {
+    "message": "FIOverlay could not turn this domain off: the list of disabled domains is full. Remove some entries in the options."
+  },
+  "actionToggleFailed": {
+    "message": "FIOverlay could not save the change - click to try again"
+  },
   "overlayTitle": {
     "message": "Choose a file"
   },
@@ -110,6 +116,12 @@
   "errorInvalidUrl": {
     "message": "Only http, https and data URLs can be loaded."
   },
+  "errorPrivateNetwork": {
+    "message": "A pasted or dropped image from a local network address is not loaded - enter its URL in the field instead."
+  },
+  "errorNotAnImage": {
+    "message": "The pasted or dropped link does not point to an image."
+  },
   "errorTooLarge": {
     "message": "The file is too large (max. 64 MB)."
   },
@@ -205,5 +217,11 @@
   },
   "optionsImportFailed": {
     "message": "The file could not be read."
+  },
+  "optionsQuotaExceeded": {
+    "message": "The list is too large for browser sync. Remove some domains and try again."
+  },
+  "optionsSaveFailed": {
+    "message": "The list could not be saved."
   }
 }

@@ -122,11 +122,15 @@ export function openOverlay(
     let app: App | null = null;
     let closed = false;
     let release: (() => void) | null = null;
+    let forget: (() => void) | null = null;
 
     const close = (): void => {
       if (closed) return;
       closed = true;
       release?.();
+      forget?.();
+      frame.removeEventListener('cancel', onCancel);
+      frame.removeEventListener('close', close);
       app?.unmount();
       try {
         if (modal && frame.open) frame.close();
@@ -187,7 +191,17 @@ export function openOverlay(
       },
     });
 
-    ctx.onInvalidated(close);
+    // A close request that bypasses our Escape handler (the Android back
+    // button, a close watcher) walks back one layer like Escape does; a dialog
+    // that got closed anyway takes the overlay with it.
+    function onCancel(event: Event): void {
+      event.preventDefault();
+      if (!instance?.dismiss()) close();
+    }
+    frame.addEventListener('cancel', onCancel);
+    frame.addEventListener('close', close);
+
+    forget = ctx.onInvalidated(close);
   });
 }
 

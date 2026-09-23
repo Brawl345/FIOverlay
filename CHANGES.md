@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.2.1
+
+- Various bugfixes
+
 ## v2.2.0
 
 - Can give an image a different file hash per file

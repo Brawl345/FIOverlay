@@ -6,11 +6,15 @@
 /** A view on a plain buffer, which is what `Blob` and `File` accept. */
 type Bytes = Uint8Array<ArrayBuffer>;
 
-/** APP1 (EXIF/XMP), APP3 to APP15 and the comment segment. APP0 (JFIF) and
- * APP2 (ICC profile) are structural or colour critical and stay. */
+/** APP1 (EXIF/XMP), APP3 to APP13, APP15 and the comment segment. APP0 (JFIF),
+ * APP2 (ICC profile) and APP14 (Adobe colour transform, which decides how a
+ * CMYK or RGB JPEG is decoded) are structural or colour critical and stay. */
 function droppedJpegSegment(marker: number): boolean {
   return (
-    marker === 0xe1 || (marker >= 0xe3 && marker <= 0xef) || marker === 0xfe
+    marker === 0xe1 ||
+    (marker >= 0xe3 && marker <= 0xed) ||
+    marker === 0xef ||
+    marker === 0xfe
   );
 }
 
@@ -42,6 +46,12 @@ export function stripJpeg(bytes: Bytes): Bytes {
     const marker = bytes[offset + 1] ?? 0;
     // Image data starts at SOS and runs to the end; EOI ends the file.
     if (bytes[offset] !== 0xff || marker === 0xda || marker === 0xd9) break;
+    // Any number of 0xFF fill bytes may precede a marker.
+    if (marker === 0xff) {
+      parts.push(bytes.subarray(offset, offset + 1));
+      offset++;
+      continue;
+    }
     const length = ((bytes[offset + 2] ?? 0) << 8) | (bytes[offset + 3] ?? 0);
     const end = offset + 2 + length;
     if (length < 2 || end > bytes.length) break;
@@ -79,9 +89,10 @@ export function stripWebp(bytes: Bytes): Bytes {
   let offset = 12;
   while (offset + 8 <= bytes.length) {
     const size = view.getUint32(offset + 4, true);
-    // Chunks are padded to an even length.
-    const end = offset + 8 + size + (size % 2);
-    if (end > bytes.length) break;
+    if (offset + 8 + size > bytes.length) break;
+    // Chunks are padded to an even length; some encoders leave the padding of
+    // the last one out.
+    const end = Math.min(offset + 8 + size + (size % 2), bytes.length);
     const type = fourCC(bytes, offset);
     if (!WEBP_DROPPED.has(type)) {
       const chunk = bytes.slice(offset, end);

@@ -253,20 +253,15 @@ function reset(): void {
   render();
 }
 
-/** Rotation and crop are baked at full resolution, the scale on the way out. */
+/**
+ * Rotation, crop and scale are one matrix, so the bitmap is drawn straight
+ * into a canvas of the output size.
+ */
 async function save(): Promise<void> {
   const source = bitmap.value;
   if (!source || busy.value) return;
   busy.value = true;
   try {
-    const full = document.createElement('canvas');
-    full.width = rotated.value.width;
-    full.height = rotated.value.height;
-    const context = full.getContext('2d');
-    if (!context) throw new Error('no 2d context');
-    context.setTransform(transformFor(1));
-    context.drawImage(source, 0, 0);
-
     const target = document.createElement('canvas');
     target.width = output.value.width;
     target.height = output.value.height;
@@ -277,17 +272,14 @@ async function save(): Promise<void> {
       out.fillRect(0, 0, target.width, target.height);
     }
     out.imageSmoothingQuality = 'high';
-    out.drawImage(
-      full,
-      crop.value.x,
-      crop.value.y,
-      crop.value.width,
-      crop.value.height,
-      0,
-      0,
-      target.width,
-      target.height,
+    const area = crop.value;
+    const scaleX = target.width / area.width;
+    const scaleY = target.height / area.height;
+    out.setTransform(
+      new DOMMatrix([scaleX, 0, 0, scaleY, -area.x * scaleX, -area.y * scaleY])
+        .multiply(DOMMatrix.fromMatrix(transformFor(1))),
     );
+    out.drawImage(source, 0, 0);
 
     const blob = await encodeCanvas(target, type.value);
     emit(
@@ -309,13 +301,21 @@ function onResize(): void {
   render();
 }
 
+let unmounted = false;
+
 onMounted(async () => {
+  let decoded: ImageBitmap;
   try {
-    bitmap.value = await createImageBitmap(props.file);
+    decoded = await createImageBitmap(props.file);
   } catch {
     failed.value = true;
     return;
   }
+  if (unmounted) {
+    decoded.close();
+    return;
+  }
+  bitmap.value = decoded;
   resetCrop();
   fit();
   render();
@@ -323,6 +323,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  unmounted = true;
   window.removeEventListener('resize', onResize);
   bitmap.value?.close();
 });

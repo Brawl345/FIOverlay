@@ -11,6 +11,7 @@ import {
   DOWNLOAD_PORT,
   type DownloadEvent,
   type DownloadRequest,
+  type DownloadSource,
 } from './messages';
 
 export interface PickResult {
@@ -45,6 +46,7 @@ function fileNameFromUrl(url: string, mime: string): string {
 export function downloadUrl(
   url: string,
   onProgress: (progress: DownloadProgress) => void,
+  source: DownloadSource = 'user',
 ): Promise<PickResult> {
   if (url.startsWith('data:')) {
     try {
@@ -117,7 +119,7 @@ export function downloadUrl(
       finish({ files: [], error: 'errorDownloadFailed' }),
     );
 
-    port.postMessage({ url } satisfies DownloadRequest);
+    port.postMessage({ url, source } satisfies DownloadRequest);
   });
 }
 
@@ -145,7 +147,7 @@ export async function filesFromDataTransfer(
   );
   if (html) {
     const url = imageUrlFromHtml(await readString(html));
-    if (url) return downloadUrl(url, onProgress);
+    if (url) return downloadUrl(url, onProgress, 'page');
   }
 
   // Pasting text is a no-op, not a failure: the URL field is right there.
@@ -183,7 +185,7 @@ export async function filesFromClipboardApi(
     const url = imageUrlFromHtml(
       await (await item.getType('text/html')).text(),
     );
-    if (url) return downloadUrl(url, onProgress);
+    if (url) return downloadUrl(url, onProgress, 'page');
   }
 
   return { files: [], error: 'errorClipboardEmpty' };

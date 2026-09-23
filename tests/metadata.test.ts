@@ -79,6 +79,20 @@ describe('stripJpeg', () => {
     );
   });
 
+  it('keeps the Adobe colour transform and skips fill bytes', () => {
+    const input = join(
+      bytes(0xff, 0xd8),
+      segment(0xee, 12, 0x77), // APP14 / Adobe
+      bytes(0xff, 0xff), // fill
+      segment(0xe1, 20, 0xaa),
+      scan,
+    );
+    const out = stripJpeg(input);
+    expect(out.length).toBe(input.length - 24);
+    expect(out.includes(0x77)).toBe(true);
+    expect(out.includes(0xaa)).toBe(false);
+  });
+
   it('leaves anything that is not a JPEG alone', () => {
     const input = bytes(1, 2, 3, 4, 5, 6);
     expect(stripJpeg(input)).toBe(input);
@@ -145,6 +159,16 @@ describe('stripWebp', () => {
     expect(out.includes(0xbb)).toBe(false);
     expect(out[20]).toBe(0b00100000);
     expect(new DataView(out.buffer).getUint32(4, true)).toBe(out.length - 8);
+  });
+
+  it('keeps a last chunk whose padding byte is missing', () => {
+    const input = webp(
+      riffChunk('EXIF', new Uint8Array(12).fill(0xaa)),
+      riffChunk('VP8L', new Uint8Array(9).fill(7)).subarray(0, 17),
+    );
+    const out = stripWebp(input);
+    expect(out.includes(0xaa)).toBe(false);
+    expect(out.filter((value) => value === 7).length).toBe(9);
   });
 
   it('leaves anything that is not a WebP alone', () => {

@@ -102,8 +102,12 @@ export function splitFileName(name: string): [stem: string, extension: string] {
   return [name.slice(0, dot), name.slice(dot)];
 }
 
+/** Control characters and bidi overrides, which can make `gpj.exe` read as a JPEG. */
+const INVISIBLE = /[\p{Cc}\p{Bidi_Control}]/gu;
+
 export function sanitizeFileName(name: string): string {
   return name
+    .replace(INVISIBLE, '')
     .replace(/[\\/:*?"<>|]/g, '_')
     .replace(/^[.\s]+/, '')
     .trim()

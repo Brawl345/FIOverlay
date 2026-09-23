@@ -58,6 +58,14 @@ export function sortDomains(domains: string[]): string[] {
   return [...new Set(domains)].sort((a, b) => a.localeCompare(b));
 }
 
+/** Thrown when the list does not fit into a single `storage.sync` item. */
+export class DomainQuotaError extends Error {
+  constructor() {
+    super('disabled domain list exceeds the sync quota');
+    this.name = 'DomainQuotaError';
+  }
+}
+
 export async function getDisabledDomains(): Promise<string[]> {
   try {
     const result = await browser.storage.sync.get(DISABLED_DOMAINS_KEY);
@@ -69,9 +77,14 @@ export async function getDisabledDomains(): Promise<string[]> {
   }
 }
 
+/** Throws `DomainQuotaError` when the list is too large for `storage.sync`. */
 export async function setDisabledDomains(domains: string[]): Promise<string[]> {
   const next = sortDomains(domains);
-  await browser.storage.sync.set({ [DISABLED_DOMAINS_KEY]: next });
+  try {
+    await browser.storage.sync.set({ [DISABLED_DOMAINS_KEY]: next });
+  } catch (error) {
+    throw /quota/i.test(String(error)) ? new DomainQuotaError() : error;
+  }
   return next;
 }
 

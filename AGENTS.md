@@ -17,8 +17,9 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   (`accept` matching, data URLs, names, sizes), `convert.ts` (canvas encoding, the output type an
   `accept` leaves possible), `metadata.ts` (EXIF/XMP/IPTC removal on the byte level),
   `rehash.ts` (invisible pixel change plus re-encode, for a different file hash),
-  `settings.ts` (synced switches), `picker-hook.ts` (page-world `click()`/`showPicker()` patch),
-  `base64.ts`, `messages.ts`, `i18n.ts`.
+  `network.ts` (local-network hosts for page-sourced downloads), `settings.ts` (synced switches),
+  `picker-hook.ts` (page-world `click()`/`showPicker()` patch), `base64.ts`, `messages.ts`,
+  `i18n.ts`.
 - **`entrypoints/content/`**: `index.ts` (capture-phase click interception at `document_start`),
   `early-events.ts` (paste/keydown capture registered before page scripts), `overlay.ts`
   (`<dialog>` + closed shadow root, Vue mount, `assignFiles`), `canvas.ts` (bitmap decode/draw),
@@ -64,15 +65,19 @@ Framework-free logic lives in `lib/`, UI in `entrypoints/`:
   pixel would be quantized away. It runs after metadata removal, so nothing can take the change
   with it, and it is offered only for the types a canvas can write.
 - Metadata removal runs on the raw bytes when the selection is confirmed, never through a canvas:
-  a JPEG keeps its APP0 and its ICC profile in APP2, a PNG its `iCCP`, and the image data is
-  copied through untouched. A file of another type, or one with nothing to remove, is passed on as
-  it is.
+  a JPEG keeps its APP0, its ICC profile in APP2 and the Adobe colour transform in APP14, a PNG
+  its `iCCP`, and the image data is copied through untouched. A file of another type, or one with
+  nothing to remove, is passed on as it is.
 - An edited item enters the list under a fresh id: `Thumbnail` and the pixel size are read once on
   mount, so the row has to be remounted to show the new bytes.
 - Pasting takes files and image flavours only; text is ignored without an error. The URL field is
   the deliberate path for a link, so the global paste capture has to step aside whenever a text
   field of ours holds focus and the clipboard carries no file - otherwise the field cannot be
   pasted into at all.
+- The background fetch ignores CORS, and the page can write clipboard and drag payloads itself.
+  An image URL taken from such a payload (`source: 'page'`) therefore only reaches a public host or
+  the frame's own origin, is checked again after redirects, and must answer with an `image/*`
+  type. A URL typed into the field (`source: 'user'`) has none of these limits.
 
 ## Commands (npm + Node 22)
 
