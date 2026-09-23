@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
   <app appid='jjkpdjjmgolckkfmjemcjbeglpkdoccm'>
-    <updatecheck codebase='https://github.com/Brawl345/FIOverlay/releases/download/2.2.0/fioverlay-2.2.0.crx' version='2.2.0' />
+    <updatecheck codebase='https://github.com/Brawl345/FIOverlay/releases/download/3.0.0/fioverlay-3.0.0.crx' version='3.0.0' />
   </app>
 </gupdate>
