@@ -2,6 +2,7 @@
 
 ## v2.2.1
 
+- New filesize is shown while editing images
 - Various bugfixes
 
 ## v2.2.0

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue';
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue';
 import {
   editOutputType,
   encodeCanvas,
   renameToType,
 } from '../../lib/convert';
+import { formatSize } from '../../lib/files';
 import { t } from '../../lib/i18n';
 
 interface Rect {
@@ -255,33 +256,82 @@ function reset(): void {
 
 /**
  * Rotation, crop and scale are one matrix, so the bitmap is drawn straight
- * into a canvas of the output size.
+ * into a canvas of the output size. The drawing is synchronous, so the result
+ * belongs to the state at the moment of the call.
  */
+function encode(source: ImageBitmap): Promise<Blob> {
+  const target = document.createElement('canvas');
+  target.width = output.value.width;
+  target.height = output.value.height;
+  const out = target.getContext('2d');
+  if (!out) throw new Error('no 2d context');
+  if (type.value === 'image/jpeg') {
+    out.fillStyle = '#ffffff';
+    out.fillRect(0, 0, target.width, target.height);
+  }
+  out.imageSmoothingQuality = 'high';
+  const area = crop.value;
+  const scaleX = target.width / area.width;
+  const scaleY = target.height / area.height;
+  out.setTransform(
+    new DOMMatrix([
+      scaleX,
+      0,
+      0,
+      scaleY,
+      -area.x * scaleX,
+      -area.y * scaleY,
+    ]).multiply(DOMMatrix.fromMatrix(transformFor(1))),
+  );
+  out.drawImage(source, 0, 0);
+  return encodeCanvas(target, type.value);
+}
+
+/** Everything the encoded bytes depend on. */
+const stateKey = computed(() =>
+  JSON.stringify([rotation.value, crop.value, output.value, type.value]),
+);
+
+/** The bytes of the current state, encoded in the background once it settles. */
+const encoded = shallowRef<{ key: string; blob: Blob } | null>(null);
+const outputSize = computed(() =>
+  encoded.value?.key === stateKey.value
+    ? formatSize(encoded.value.blob.size)
+    : '…',
+);
+
+const ESTIMATE_DELAY_MS = 300;
+let estimateTimer: ReturnType<typeof setTimeout> | undefined;
+let estimateRun = 0;
+
+function scheduleEstimate(): void {
+  clearTimeout(estimateTimer);
+  const source = bitmap.value;
+  // A drag ends in `onUp`, which changes the crop and lands here again.
+  if (!source || grab || encoded.value?.key === stateKey.value) return;
+  estimateTimer = setTimeout(async () => {
+    const run = ++estimateRun;
+    const key = stateKey.value;
+    try {
+      const blob = await encode(source);
+      if (run === estimateRun && !unmounted) encoded.value = { key, blob };
+    } catch {
+      // The size stays open; saving reports a real failure.
+    }
+  }, ESTIMATE_DELAY_MS);
+}
+
+watch([stateKey, bitmap], scheduleEstimate);
+
 async function save(): Promise<void> {
   const source = bitmap.value;
   if (!source || busy.value) return;
   busy.value = true;
   try {
-    const target = document.createElement('canvas');
-    target.width = output.value.width;
-    target.height = output.value.height;
-    const out = target.getContext('2d');
-    if (!out) throw new Error('no 2d context');
-    if (type.value === 'image/jpeg') {
-      out.fillStyle = '#ffffff';
-      out.fillRect(0, 0, target.width, target.height);
-    }
-    out.imageSmoothingQuality = 'high';
-    const area = crop.value;
-    const scaleX = target.width / area.width;
-    const scaleY = target.height / area.height;
-    out.setTransform(
-      new DOMMatrix([scaleX, 0, 0, scaleY, -area.x * scaleX, -area.y * scaleY])
-        .multiply(DOMMatrix.fromMatrix(transformFor(1))),
-    );
-    out.drawImage(source, 0, 0);
-
-    const blob = await encodeCanvas(target, type.value);
+    const blob =
+      encoded.value?.key === stateKey.value
+        ? encoded.value.blob
+        : await encode(source);
     emit(
       'apply',
       new File([blob], outputName.value, {
@@ -324,6 +374,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   unmounted = true;
+  clearTimeout(estimateTimer);
   window.removeEventListener('resize', onResize);
   bitmap.value?.close();
 });
@@ -411,8 +462,9 @@ onUnmounted(() => {
         </label>
       </div>
 
-      <p class="fio-editor-meta">
-        {{ outputName }} · {{ output.width }} × {{ output.height }} px
+      <p class="fio-editor-meta" aria-live="polite">
+        {{ outputName }} · {{ outputSize }} · {{ output.width }} ×
+        {{ output.height }} px
       </p>
 
       <div class="fio-editor-actions">
